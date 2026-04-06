@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ログイン & 初期登録 - MYアルバム アーティスト</title>
+    <link rel="stylesheet" href="styles.css?v=20260327">
+    <style>
+        .login-hero { text-align: center; margin-bottom: 40px; padding-top: 20px; }
+        .invite-notice {
+            background: #FFF8F2; border: 1px solid #FFE0C2; border-radius: 12px;
+            padding: 16px; margin-bottom: 32px; text-align: center;
+        }
+        .artist-name { color: var(--primary-color); font-size: 20px; font-weight: 900; }
+        .invite-period { font-size: 11px; color: #CC5500; font-weight: 700; margin-top: 4px; }
+        
+        .onboarding-container { background: white; border-radius: 24px; padding: 32px 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+        .step-indicator { display: flex; gap: 8px; margin-bottom: 24px; justify-content: center; }
+        .step-dot { width: 8px; height: 8px; border-radius: 50%; background: #E5E5EA; transition: 0.3s; }
+        .step-dot.active { background: var(--primary-color); width: 24px; border-radius: 4px; }
+        
+        .optional-tag { font-size: 10px; font-weight: 800; color: #8E8E93; background: #F2F2F7; padding: 2px 6px; border-radius: 4px; margin-left: 8px; vertical-align: middle; }
+        .required-tag { font-size: 10px; font-weight: 800; color: #FFF; background: var(--danger); padding: 2px 6px; border-radius: 4px; margin-left: 8px; vertical-align: middle; }
+        
+        /* Modal Styles */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; visibility: hidden; opacity: 0; transition: 0.3s ease; display: block !important; }
+        .modal-overlay.active { visibility: visible; opacity: 1; }
+        .modal-sheet { position: fixed; top: 0; left: 50%; transform: translateX(-50%) translateY(100vh); width: 100%; max-width: 430px; height: 100vh; background: #fff; z-index: 1001; transition: 0.4s cubic-bezier(0.19, 1, 0.22, 1); overflow-y: auto; display: flex; flex-direction: column; }
+        .modal-overlay.active .modal-sheet { transform: translateX(-50%) translateY(0); }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .plan-card input[type="radio"] { display: none; }
+    </style>
+    <script src="lang.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <div class="lang-switcher">
+            <button class="lang-btn active" data-lang="ja" onclick="setLanguage('ja')">JP</button>
+            <button class="lang-btn" data-lang="en" onclick="setLanguage('en')">EN</button>
+        </div>
+        <!-- Step 0: Login Choice -->
+        <div id="step-login" class="onboarding-step active p-6">
+            <div class="login-hero">
+                <div class="logo-text" style="font-size: 32px;">MY<span class="logo-accent">アルバム</span></div>
+                <div class="text-xs font-black" style="color:var(--primary-color); letter-spacing: 2px; margin-top: 4px;" data-i18n="app_title_for_artists">FOR ARTISTS</div>
+            </div>
+
+            <div class="invite-notice anim-fade">
+                <p class="text-xs" style="color:var(--text-sub); margin-bottom: 8px;" data-i18n="invited_artist">招待されたアーティスト</p>
+                <p class="artist-name">蒼くみ <span style="font-size:14px; color:var(--text-main);" data-i18n="artist_name_suffix">様</span></p>
+                <p class="invite-period" data-i18n="invite_period">有効期限: 発行日から90日以内 (2026/06/19まで)</p>
+            </div>
+
+            <div class="onboarding-container anim-fade" style="animation-delay: 0.1s;">
+                <h3 class="mb-6 text-center" data-i18n="login_signup">ログイン / 新規登録</h3>
+                <button class="btn btn-outline mb-4" onclick="document.getElementById('step-login').classList.remove('active'); document.getElementById('step-1').classList.add('active');">
+                    <img src="images/icon/Google.png" alt="Google">
+                    <span data-i18n="login_google">Googleでログイン</span>
+                </button>
+                <button class="btn mb-4" style="background: #0866FF; color: white;" onclick="document.getElementById('step-login').classList.remove('active'); document.getElementById('step-1').classList.add('active');">
+                    <img src="images/icon/Facebook.png" alt="Meta">
+                    <span data-i18n="login_facebook">Meta (Facebook) でログイン</span>
+                </button>
+                <button class="btn" style="background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); color: white;" onclick="document.getElementById('step-login').classList.remove('active'); document.getElementById('step-1').classList.add('active');">
+                    <img src="images/icon/Instagram.png" alt="Instagram">
+                    <span data-i18n="login_instagram">Meta (Instagram) でログイン</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 1: Basic Info -->
+        <div id="step-1" class="onboarding-step p-6">
+            <div class="step-indicator"><div class="step-dot active"></div><div class="step-dot"></div><div class="step-dot"></div><div class="step-dot"></div><div class="step-dot"></div><div class="step-dot"></div></div>
+            <h2 class="mb-2" data-i18n="step1_title">基本情報の登録</h2>
+            <p class="text-sub mb-6" data-i18n="step1_desc">アーティスト活動に使用する情報を入力してください。</p>
+
+            <div class="input-group mb-4">
+                <label class="label"><span data-i18n="label_name">氏名</span> <span class="required-tag" data-i18n="tag_required">必須</span></label>
+                <div class="flex gap-2">
+                    <div style="flex:1;">
+                        <input type="text" id="name-last" class="input" placeholder="氏 (例：蒼)" data-i18n="placeholder_last_name" oninput="validateName('name-last', 'error-name-last')">
+                        <div id="error-name-last" class="text-xs mt-1" style="display:none; color:var(--danger); font-weight:700;"></div>
+                    </div>
+                    <div style="flex:1;">
+                        <input type="text" id="name-first" class="input" placeholder="名 (例：くみ)" data-i18n="placeholder_first_name" oninput="validateName('name-first', 'error-name-first')">
+                        <div id="error-name-first" class="text-xs mt-1" style="display:none; color:var(--danger); font-weight:700;"></div>
+                    </div>
+                </div>
+                <div class="text-xs text-sub mt-1" data-i18n="note_10chars">※各10文字以内</div>
+            </div>
+            <div class="input-group mb-4">
+                <label class="label"><span data-i18n="label_phone">電話番号</span> <span class="required-tag" data-i18n="tag_required">必須</span></label>
+                <input type="tel" id="tel-input" class="input" placeholder="例：09000000000" data-i18n="placeholder_phone" oninput="validatePhone()">
+                <div class="text-xs text-sub mt-1" data-i18n="note_no_hyphen">※ハイフンなし</div>
+                <div id="error-tel" class="text-xs mt-1" style="display:none; color:var(--danger); font-weight:700;"></div>
+            </div>
+            <div class="input-group mb-4">
+                <label class="label"><span data-i18n="label_email">Email</span> <span class="required-tag" data-i18n="tag_required">必須</span></label>
+                <input type="email" id="email-input" class="input" placeholder="example@office.com" oninput="validateEmail()">
+                <div id="error-email" class="text-xs mt-1" style="display:none; color:var(--danger); font-weight:700;"></div>
+            </div>
+            <div class="input-group mb-4">
+                <label class="label"><span data-i18n="label_zip">郵便番号</span> <span class="required-tag" data-i18n="tag_required">必須</span></label>
+                <input type="tel" id="zip-input" class="input" placeholder="例：1500001" data-i18n="placeholder_zip" oninput="validateZip()" maxlength="7">
+                <div class="text-xs text-sub mt-1" data-i18n="note_no_hyphen">※ハイフンなし</div>
+                <div id="error-zip" class="text-xs mt-1" style="display:none; color:var(--danger); font-weight:700;"></div>
+            </div>
+            <div class="input-group mb-12">
+                <label class="label"><span data-i18n="label_address">住所</span> <span class="required-tag" data-i18n="tag_required">必須</span></label>
+                <input type="text" id="address-input" class="input" placeholder="例：東京都渋谷区..." data-i18n="placeholder_address" oninput="validateAddress()">
+                <div class="text-xs text-sub mt-1" data-i18n="note_100chars">※全角半角合計100文字以内</div>
+                <div id="error-address" class="text-xs mt-1" style="display:none; color:var(--danger); font-weight:700;"></div>
+            </div>
+
+            <button class="btn btn-primary btn-next" data-next="step-2" data-i18n="btn_next">次へ進む</button>
+        </div>
+
+        <!-- Step 2: Album Setting (Optional) -->
+        <div id="step-2" class="onboarding-step p-6">
+            <div class="step-indicator"><div class="step-dot active"></div><div class="step-dot active"></div><div class="step-dot"></div><div class="step-dot"></div><div class="step-dot"></div><div class="step-dot"></div></div>
+            <h2 class="mb-2" data-i18n="step2_title">アルバムの設定</h2>
+            <p class="text-sub mb-6" data-i18n="step2_desc">ファンが目にするアルバムの名前を設定します。</p>
+
+            <div class="input-group mb-12">
+                <label class="label"><span data-i18n="label_album_name">MYアルバム名</span> <span class="optional-tag" data-i18n="tag_optional">任意</span></label>
+                <input type="text" id="album-name" class="input" placeholder="例：蒼くみ推し活HUB" data-i18n="placeholder_album_name" value="蒼くみ Official HUB" oninput="validateAlbumName()">
+                <div class="flex justify-between items-center mt-2">
+                    <p class="text-xs text-sub" data-i18n="note_change_later">※後からマイページで変更可能です。</p>
+                    <p class="text-xs text-sub" data-i18n="note_20chars">※20文字以内</p>
+                </div>
+                <div id="error-album-name" class="text-xs mt-1" style="display:none; color:var(--danger); font-weight:700;"></div>
+            </div>
+
+            <div class="flex gap-4">
+                <button class="btn btn-outline btn-back" data-prev="step-1" data-i18n="btn_back">戻る</button>
+                <button class="btn btn-primary btn-next" data-next="step-3" data-i18n="btn_next">次へ進む</button>
+            </div>
+        </div>
+
+        <!-- Step 3: Icon Upload (Optional) -->
+        <div id="step-3" class="onboarding-step p-6">
+            <div class="step-indicator"><div class="step-dot active"></div><div class="step-dot active"></div><div class="step-dot active"></div><div class="step-dot"></div><div class="step-dot"></div><div class="step-dot"></div></div>
+            <h2 class="mb-2" data-i18n="step3_title">アイコン画像の登録</h2>
+            <p class="text-sub mb-6" data-i18n="step3_desc">キュレーターアプリで表示されるアイコンです。</p>
+
+            <div class="flex flex-col items-center gap-6 mb-10">
+                <div style="position: relative;">
+                    <img id="preview-icon" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Aoi" class="avatar-lg" style="width: 120px; height: 120px;">
+                    <button class="btn-ghost" style="position: absolute; bottom: 0; right: 0; background: var(--primary-color); color: white; border-radius: 50%; width: 36px; height: 36px; padding: 0;" onclick="document.getElementById('icon-file').click()">📸</button>
+                </div>
+                <input type="file" id="icon-file" style="display:none;" onchange="previewImage(this, 'preview-icon')">
+                <div class="text-left" style="background:#f9f9f9; padding: 16px; border-radius:12px; border:1px solid var(--border-color); width:100%; box-sizing: border-box;">
+                    <p class="text-xs font-black mb-2" style="color:var(--text-main);" data-i18n="icon_rec_title">📸 アイコン画像の推奨設定</p>
+                    <p class="text-xs text-sub leading-relaxed" style="margin-bottom:4px;" data-i18n="icon_rec_1">・推奨サイズ: 320×320px 以上の正方形 (1:1)</p>
+                    <p class="text-xs text-sub leading-relaxed" style="margin-bottom:4px;" data-i18n="icon_rec_2">・ファイル容量: 8MB以内 (JPGまたはPNG)</p>
+                    <p class="text-xs text-sub leading-relaxed" style="font-size:10px; margin-top:8px; display:inline-block; background:#e6f3ff; padding:2px 8px; border-radius:4px; color:#0866FF;" data-i18n="icon_rec_note">※Instagramプロフィールの最適基準に合わせています</p>
+                </div>
+            </div>
+
+            <div style="height: 20px;"></div>
+
+            <div class="flex gap-4">
+                <button class="btn btn-outline btn-back" data-prev="step-2" data-i18n="btn_back">戻る</button>
+                <button class="btn btn-primary btn-next" data-next="step-4" data-i18n="btn_next">次へ進む</button>
+            </div>
+        </div>
+
+        <!-- Step 4: Manager Info (Optional) -->
+        <div id="step-4" class="onboarding-step p-6">
+            <div class="step-indicator"><div class="step-dot active"></div><div class="step-dot active"></div><div class="step-dot active"></div><div class="step-dot active"></div><div class="step-dot"></div><div class="step-dot"></div></div>
+            <h2 class="mb-2" data-i18n="step4_title">事務所・マネージャー連絡先</h2>
+            <p class="text-sub mb-4 font-black" style="font-size: 13px;" data-i18n="step4_desc">運営からのお知らせを送付する連絡先を登録できます。</p>
+
+            <div class="p-3 mb-6 anim-fade" style="background: #F0F7FF; border: 1px solid #BEE3F8; border-radius: 12px; text-align: left;">
+                <p style="font-size: 13px; font-weight: 800; color: #2B6CB0; margin-bottom: 4px;" data-i18n="step4_skip_title">💡 この項目はスキップ可能です</p>
+                <p style="font-size: 11px; color: #4A5568; font-weight: 700; line-height: 1.5;" data-i18n="step4_skip_desc">フリーランスの方や、後で登録されたい方は、何も入力せずに一番下の「スキップして完了する」を押すだけで初期登録がすべて完了します！</p>
+            </div>
+
+            <div class="input-group mb-4">
+                <label class="label"><span data-i18n="label_office_name">事務所名</span> <span class="optional-tag" data-i18n="tag_optional">任意</span></label>
+                <input type="text" id="office-name" class="input" placeholder="例：〇〇エンターテインメント" data-i18n="placeholder_office_name" oninput="validateOfficeName()">
+                <div class="text-xs text-sub mt-1" data-i18n="note_50chars">※全角半角50文字以内</div>
+                <div id="error-office-name" class="text-xs mt-1" style="display:none; color:var(--danger); font-weight:700;"></div>
+            </div>
+            <div class="input-group mb-4">
+                <label class="label"><span data-i18n="label_mgr_name">担当マネージャー名</span> <span class="optional-tag" data-i18n="tag_optional">任意</span></label>
+                <div class="flex gap-2">
+                    <div style="flex:1;">
+                        <input type="text" id="mgr-name-last" class="input" placeholder="氏 (例：佐藤)" data-i18n="placeholder_mgr_last" oninput="validateManagerName('mgr-name-last', 'error-mgr-name-last')">
+                        <div id="error-mgr-name-last" class="text-xs mt-1" style="display:none; color:var(--danger); font-weight:700;"></div>
+                    </div>
+                    <div style="flex:1;">
+                        <input type="text" id="mgr-name-first" class="input" placeholder="名 (例：太郎)" data-i18n="placeholder_mgr_first" oninput="validateManagerName('mgr-name-first', 'error-mgr-name-first')">
+                        <div id="error-mgr-name-first" class="text-xs mt-1" style="display:none; color:var(--danger); font-weight:700;"></div>
+                    </div>
+                </div>
+                <div class="text-xs text-sub mt-1" data-i18n="note_10chars">※各10文字以内</div>
+            </div>
+            <div class="input-group mb-4">
+                <label class="label"><span data-i18n="label_mgr_phone">担当者電話番号</span> <span class="optional-tag" data-i18n="tag_optional">任意</span></label>
+                <input type="tel" id="mgr-tel-input" class="input" placeholder="例：09000000000" data-i18n="placeholder_phone" oninput="validateMgrPhone()">
+                <div class="text-xs text-sub mt-1" data-i18n="note_no_hyphen">※ハイフンなし</div>
+                <div id="error-mgr-tel" class="text-xs mt-1" style="display:none; color:var(--danger); font-weight:700;"></div>
+            </div>
+            <div class="input-group mb-12">
+                <label class="label"><span data-i18n="label_mgr_email">担当者メールアドレス</span> <span class="optional-tag" data-i18n="tag_optional">任意</span></label>
+                <input type="email" id="mgr-email-input" class="input" placeholder="example@office.com" oninput="validateMgrEmail()">
+                <div id="error-mgr-email" class="text-xs mt-1" style="display:none; color:var(--danger); font-weight:700;"></div>
+            </div>
+
+            <div class="flex flex-col gap-3">
+                <button class="btn btn-primary w-full btn-next" id="btn-complete-mgr" data-next="step-5" data-i18n="btn_skip_next">入力をスキップして次へ進む</button>
+                <button class="btn btn-outline w-full btn-back" data-prev="step-3" data-i18n="btn_back">戻る</button>
+            </div>
+        </div>
+
+        <!-- Step 5: Plan Selection -->
+        <div id="step-5" class="onboarding-step p-6">
+            <div class="step-indicator"><div class="step-dot active"></div><div class="step-dot active"></div><div class="step-dot active"></div><div class="step-dot active"></div><div class="step-dot active"></div><div class="step-dot"></div></div>
+            <h2 class="mb-2" data-i18n="step5_title">利用プランのご選択</h2>
+            <p class="text-sub mb-6 text-xs font-black" data-i18n="step5_desc">MYアルバムを快適にご利用いただくためのプランを選択してください。</p>
+
+            <div class="plan-cards mb-6 flex flex-col gap-4">
+                <!-- Basic -->
+                <label id="plan-basic" class="plan-card border border-gray-200 rounded-xl p-4 cursor-pointer relative transition-all" tabindex="0" onclick="selectPlan('basic', 600, 'ベーシック_0.5TB/年')">
+                    <div class="flex justify-between items-center mb-2">
+                        <span style="font-size: 14px; font-weight: 900; color: #4A5568;" data-i18n="plan_basic">ベーシック</span>
+                        <span style="font-size: 18px; font-weight: 900; color: #1a202c;">¥600<span style="font-size: 12px; color: #718096;" data-i18n="plan_month"> / 月</span></span>
+                    </div>
+                    <div class="text-xs font-bold" style="color: #635BFF;" data-i18n="plan_basic_desc">年間データ転送量上限: 0.5TB</div>
+                </label>
+                <!-- Standard -->
+                <label id="plan-standard" class="plan-card border-2 border-primary rounded-xl p-4 cursor-pointer relative transition-all" style="background:#FFF0F5; border: 2px solid var(--primary-color);" tabindex="0" onclick="selectPlan('standard', 900, 'スタンダード_1TB/年')">
+                    <div class="absolute" style="top:-12px; right:12px; background:var(--primary-color); color:white; font-size:10px; font-weight:800; padding:2px 8px; border-radius:12px;" data-i18n="plan_rec">おすすめ</div>
+                    <div class="flex justify-between items-center mb-2">
+                        <span style="font-size: 14px; font-weight: 900; color: var(--primary-color);" data-i18n="plan_standard">スタンダード</span>
+                        <span style="font-size: 20px; font-weight: 900; color: var(--text-main);">¥900<span style="font-size: 12px; color: var(--text-sub);" data-i18n="plan_month"> / 月</span></span>
+                    </div>
+                    <div class="text-xs font-bold" style="color: var(--primary-color);" data-i18n="plan_standard_desc">年間データ転送量上限: 1TB</div>
+                </label>
+                <!-- Premium -->
+                <label id="plan-premium" class="plan-card border border-gray-200 rounded-xl p-4 cursor-pointer relative transition-all" tabindex="0" onclick="selectPlan('premium', 1500, 'プレミアム_2TB/年')">
+                    <div class="flex justify-between items-center mb-2">
+                        <span style="font-size: 14px; font-weight: 900; color: #D69E2E;" data-i18n="plan_premium">プレミアム</span>
+                        <span style="font-size: 18px; font-weight: 900; color: #1a202c;">¥1,500<span style="font-size: 12px; color: #718096;" data-i18n="plan_month"> / 月</span></span>
+                    </div>
+                    <div class="text-xs font-bold" style="color: #D69E2E;" data-i18n="plan_premium_desc">年間データ転送量上限: 2TB</div>
+                </label>
+            </div>
+
+            <div class="mb-8 p-4 rounded-xl" style="background:#f7fafc; border:1px solid #e2e8f0;">
+                <p style="font-size:12px; font-weight:800; color:#2d3748; margin-bottom:12px;" data-i18n="plan_notice_title">💡 データ転送量についての大切なお知らせ</p>
+                <ul style="font-size:11px; color:#4a5568; line-height:1.6; padding-left:16px; margin:0;" class="list-disc">
+                    <li style="margin-bottom:6px;" data-i18n="plan_notice_1">データ転送料とは、アルバムへのアップロードやファンによるコンテンツ視聴等で発生する通信量（上り・下りのデータ送信量）です。</li>
+                    <li style="margin-bottom:6px;" data-i18n="plan_notice_2">万が一、年間の転送量上限を超過した場合でも、オプションで追加チャージが可能です。</li>
+                    <li style="margin-bottom:6px;" data-i18n="plan_notice_3">上限超過後に追加購入を行わなくても、<strong>1年間は大切なデータを安全に保持</strong>します（期間中のデータ引き出しも適宜可能です）。</li>
+                    <li><span style="color:#E53E3E; font-weight:800;" data-i18n="plan_notice_4">※ 超過後、1年間一度も追加チャージ等が行われず放置された場合、データは消滅しますのであらかじめご注意ください。</span></li>
+                </ul>
+            </div>
+
+            <div class="flex flex-col gap-3">
+                <button class="btn btn-primary w-full btn-next" data-next="step-6" onclick="confirmPlan()" data-i18n="btn_confirm_plan">プランを決定して次へ</button>
+                <button class="btn btn-outline w-full btn-back" data-prev="step-4" data-i18n="btn_back">戻る</button>
+            </div>
+        </div>
+
+        <!-- Step 6: Subscription Billing -->
+        <div id="step-6" class="onboarding-step p-6">
+            <div class="step-indicator"><div class="step-dot active"></div><div class="step-dot active"></div><div class="step-dot active"></div><div class="step-dot active"></div><div class="step-dot active"></div><div class="step-dot active"></div></div>
+            <h2 class="mb-2" data-i18n="step6_title">決済情報のご入力</h2>
+            <p class="text-sub mb-6 text-xs font-black" data-i18n="step6_desc">選択したプランの決済情報を登録してください。</p>
+
+            <div class="p-6 mb-8 text-center" style="background: linear-gradient(135deg, #FFF0F5, #FFE4E1); border: 2px solid #FFB6C1; border-radius: 20px; box-shadow: 0 8px 24px rgba(255, 51, 102, 0.15);">
+                <p id="display-plan-name" style="font-size: 14px; font-weight: 900; color: #FF3366; margin-bottom: 8px;">スタンダードプラン</p>
+                <p id="display-plan-price" style="font-size: 32px; font-weight: 900; color: var(--text-main); margin-bottom: 4px;">¥900 <span style="font-size: 14px; color: var(--text-sub);">/ 月</span></p>
+                <p id="display-plan-desc" style="font-size: 11px; color: var(--text-sub); font-weight: 700;">データ転送上限: 1TB / 年</p>
+                <p style="font-size: 10px; color: #8e8e93; font-weight: 700; margin-top:8px;" data-i18n="plan_cancel_note">※ いつでも解約可能です</p>
+            </div>
+            
+            <div id="stripe-error-banner" style="display:none; background: #FFF0F0; border: 1px solid #FFCDD2; border-radius: 12px; text-align: center; padding:16px; margin-bottom:24px;">
+                <p style="font-size: 13px; font-weight: 800; color: var(--danger); margin-bottom: 8px;" data-i18n="stripe_error_title">決済に失敗しました</p>
+                <p style="font-size: 11px; color: var(--text-sub); font-weight: 700; line-height: 1.5; margin-bottom: 12px;" data-i18n="stripe_error_desc">クレジットカード情報をご確認ください。どうしても解決しない場合は一旦ダッシュボードへ進み、後ほどマイページからご登録いただけます。</p>
+                <button class="btn btn-outline w-full" style="padding: 12px; font-size: 12px; color: var(--text-main);" onclick="window.location.href='dashboard.html'" data-i18n="btn_stripe_dashboard">後で決済情報を登録してダッシュボードへ進む</button>
+            </div>
+
+            <div class="flex flex-col gap-3">
+                <button class="btn btn-primary w-full" style="background: #635BFF; box-shadow: 0 4px 15px rgba(99, 91, 255, 0.3);" onclick="simulateStripeCheckout()" data-i18n="btn_stripe_open">クレジットカード画面を開く</button>
+                <p class="text-center text-xs text-sub mb-2" data-i18n="stripe_safe_note">※ Stripeの安全な決済ページへ遷移します</p>
+                <button class="btn btn-outline w-full btn-back mt-2" data-prev="step-5" data-i18n="btn_back">戻る</button>
+            </div>
+        </div>
+
+        <!-- Mock Stripe Checkout Modal -->
+        <div class="modal-overlay" id="mockStripeModal">
+            <div class="modal-sheet" style="background:#ffffff; height:100vh; max-height:100vh; top:0; border-radius:0;">
+                <div class="p-6">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 24px;">
+                        <div style="font-size:24px; font-weight:900; color:#635BFF; letter-spacing:-1px;">stripe</div>
+                        <div style="font-size:14px; color:#a0aec0; cursor:pointer; font-weight:800;" onclick="document.getElementById('mockStripeModal').classList.remove('active')" data-i18n="modal_cancel">キャンセル</div>
+                    </div>
+
+                    <div style="margin-bottom:24px;">
+                        <p id="mock-plan-name" style="color:var(--text-sub); font-size:14px; font-weight:800; margin-bottom:4px;">MYアルバム スタンダードプラン</p>
+                        <p id="mock-plan-price" style="font-size:32px; font-weight:900; color:#1a202c; letter-spacing:-1px;">¥900<span style="font-size:16px; color:#718096; font-weight:800;"> / 月</span></p>
+                    </div>
+                    
+                    <div style="margin-bottom:16px;">
+                        <label style="font-size:13px; font-weight:800; color:#4a5568; margin-bottom:8px; display:block;" data-i18n="modal_contact">連絡先情報</label>
+                        <input type="email" placeholder="メールアドレス" data-i18n="placeholder_email" style="width:100%; padding:14px; border:1px solid #e2e8f0; border-radius:8px; font-size:15px; margin-bottom:16px; outline:none; box-sizing:border-box;">
+                    </div>
+
+                    <div style="margin-bottom:24px;">
+                        <label style="font-size:13px; font-weight:800; color:#4a5568; margin-bottom:8px; display:block;" data-i18n="modal_card">カード情報</label>
+                        <div style="border:1px solid #e2e8f0; border-radius:8px; overflow:hidden;">
+                            <input type="tel" id="stripe-card-num" placeholder="カード番号" data-i18n="placeholder_card_num" style="width:100%; padding:14px; border:none; border-bottom:1px solid #e2e8f0; font-size:15px; outline:none; box-sizing:border-box;" oninput="formatCardNumber(this)" maxlength="19">
+                            <div style="display:flex;">
+                                <input type="tel" placeholder="MM / YY" data-i18n="placeholder_mmyy" style="width:50%; padding:14px; border:none; border-right:1px solid #e2e8f0; font-size:15px; outline:none; box-sizing:border-box;" maxlength="5">
+                                <input type="tel" placeholder="CVC" data-i18n="placeholder_cvc" style="width:50%; padding:14px; border:none; font-size:15px; outline:none; box-sizing:border-box;" maxlength="4">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom:24px;">
+                        <label style="font-size:13px; font-weight:800; color:#4a5568; margin-bottom:8px; display:block;" data-i18n="modal_cardholder">カード名義人</label>
+                        <input type="text" placeholder="TARO YAMADA" data-i18n="placeholder_cardholder" style="width:100%; padding:14px; border:1px solid #e2e8f0; border-radius:8px; font-size:15px; outline:none; box-sizing:border-box;">
+                    </div>
+
+                    <button id="stripe-pay-btn" style="width:100%; padding:16px; border-radius:8px; background:#635BFF; color:white; font-size:16px; font-weight:800; border:none; cursor:pointer; box-shadow:0 4px 12px rgba(99,91,255,0.2); transition:0.2s; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="executeMockStripePayment()"><span data-i18n="btn_stripe_pay">定期購入を申し込む</span></button>
+                    
+                    <p style="text-align:center; font-size:11px; color:#a0aec0; margin-top:24px; font-weight:700;" data-i18n="demo_note1">※ これは外部決済ページ（モック）のデモ画面です</p>
+                    <p style="text-align:center; margin-top:12px;"><span style="color:#E53E3E; font-size:10px; font-weight:800; cursor:pointer; background:#FFF5F5; padding:4px 8px; border-radius:4px;" onclick="executeMockStripePayment(true)" data-i18n="demo_note2">[デモ用: 決済失敗アクションをテストする]</span></p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <script>
+        function validateName(id, errorId) {
+            const input = document.getElementById(id);
+            const error = document.getElementById(errorId);
+            if (input.value.length > 10) {
+                error.innerText = t('error_10chars');
+                error.style.display = 'block';
+                input.style.borderColor = 'var(--danger)';
+            } else {
+                error.style.display = 'none';
+                input.style.borderColor = '';
+            }
+            checkStep1();
+        }
+
+        function validatePhone() {
+            const input = document.getElementById('tel-input');
+            const error = document.getElementById('error-tel');
+            // Auto remove hyphens
+            if (input.value.includes('-')) {
+                input.value = input.value.replace(/-/g, '');
+            }
+            const val = input.value;
+            if (val.length > 11) {
+                error.innerText = t('error_11digits');
+                error.style.display = 'block';
+                input.style.borderColor = 'var(--danger)';
+            } else if (val.length > 0 && !/^\d+$/.test(val)) {
+                error.innerText = t('error_numeric');
+                error.style.display = 'block';
+                input.style.borderColor = 'var(--danger)';
+            } else {
+                error.style.display = 'none';
+                input.style.borderColor = '';
+            }
+            checkStep1();
+        }
+
+        function validateEmail() {
+            const input = document.getElementById('email-input');
+            const error = document.getElementById('error-email');
+            const val = input.value;
+            // Basic @ check; can be expanded
+            if (val.length > 0 && !val.includes('@')) {
+                error.innerText = t('error_email');
+                error.style.display = 'block';
+                input.style.borderColor = 'var(--danger)';
+            } else {
+                error.style.display = 'none';
+                input.style.borderColor = '';
+            }
+            checkStep1();
+        }
+
+        async function validateZip() {
+            const input = document.getElementById('zip-input');
+            const error = document.getElementById('error-zip');
+            if (input.value.includes('-')) {
+                input.value = input.value.replace(/-/g, '');
+            }
+            const val = input.value;
+            
+            if (val.length > 0 && !/^\d+$/.test(val)) {
+                error.innerText = t('error_numeric');
+                error.style.display = 'block';
+                input.style.borderColor = 'var(--danger)';
+            } else if (val.length > 7) {
+                error.innerText = t('error_7digits');
+                error.style.display = 'block';
+                input.style.borderColor = 'var(--danger)';
+            } else {
+                error.style.display = 'none';
+                input.style.borderColor = '';
+                
+                if (val.length === 7) {
+                    try {
+                        const response = await fetch(`https://zipcloud.ibsnet.co.jp/api/search?zipcode=${val}`);
+                        const data = await response.json();
+                        if (data.status === 200 && data.results) {
+                            const result = data.results[0];
+                            const addrInput = document.getElementById('address-input');
+                            addrInput.value = `${result.address1}${result.address2}${result.address3}`;
+                            validateAddress(); 
+                        }
+                    } catch (e) { console.error('API Error:', e); }
+                }
+            }
+            checkStep1();
+        }
+
+        function validateAddress() {
+            const input = document.getElementById('address-input');
+            const error = document.getElementById('error-address');
+            if (input.value.length > 100) {
+                error.innerText = t('error_100chars');
+                error.style.display = 'block';
+                input.style.borderColor = 'var(--danger)';
+            } else {
+                error.style.display = 'none';
+                input.style.borderColor = '';
+            }
+            checkStep1();
+        }
+
+        function checkStep1() {
+            const errors = document.querySelectorAll('#step-1 [id^="error-"][style*="display: block"]');
+            const nextBtn = document.querySelector('#step-1 .btn-next');
+            if (errors.length > 0) {
+                nextBtn.style.opacity = '0.5';
+                nextBtn.style.pointerEvents = 'none';
+            } else {
+                nextBtn.style.opacity = '1';
+                nextBtn.style.pointerEvents = 'auto';
+            }
+        }
+
+        function validateAlbumName() {
+            const input = document.getElementById('album-name');
+            const error = document.getElementById('error-album-name');
+            if (input.value.length > 20) {
+                error.innerText = t('error_20chars');
+                error.style.display = 'block';
+                input.style.borderColor = 'var(--danger)';
+            } else {
+                error.style.display = 'none';
+                input.style.borderColor = '';
+            }
+            checkStep2();
+        }
+
+        function validateOfficeName() {
+            const input = document.getElementById('office-name');
+            const error = document.getElementById('error-office-name');
+            if (input.value.length > 50) {
+                error.innerText = t('error_50chars');
+                error.style.display = 'block';
+                input.style.borderColor = 'var(--danger)';
+            } else {
+                error.style.display = 'none';
+                input.style.borderColor = '';
+            }
+            checkStep4();
+        }
+
+        function validateManagerName(id, errorId) {
+            const input = document.getElementById(id);
+            const error = document.getElementById(errorId);
+            if (input.value.length > 10) {
+                error.innerText = t('error_10chars');
+                error.style.display = 'block';
+                input.style.borderColor = 'var(--danger)';
+            } else {
+                error.style.display = 'none';
+                input.style.borderColor = '';
+            }
+            checkStep4();
+        }
+
+        function validateMgrPhone() {
+            const input = document.getElementById('mgr-tel-input');
+            const error = document.getElementById('error-mgr-tel');
+            if (input.value.includes('-')) {
+                input.value = input.value.replace(/-/g, '');
+            }
+            const val = input.value;
+            if (val.length > 11) {
+                error.innerText = t('error_11digits');
+                error.style.display = 'block';
+                input.style.borderColor = 'var(--danger)';
+            } else if (val.length > 0 && !/^\d+$/.test(val)) {
+                error.innerText = t('error_numeric');
+                error.style.display = 'block';
+                input.style.borderColor = 'var(--danger)';
+            } else {
+                error.style.display = 'none';
+                input.style.borderColor = '';
+            }
+            checkStep4();
+        }
+
+        function validateMgrEmail() {
+            const input = document.getElementById('mgr-email-input');
+            const error = document.getElementById('error-mgr-email');
+            const val = input.value;
+            if (val.length > 0 && !val.includes('@')) {
+                error.innerText = t('error_email');
+                error.style.display = 'block';
+                input.style.borderColor = 'var(--danger)';
+            } else {
+                error.style.display = 'none';
+                input.style.borderColor = '';
+            }
+            checkStep4();
+        }
+
+        function checkStep2() {
+            const errors = document.querySelectorAll('#step-2 [id^="error-"][style*="display: block"]');
+            const nextBtn = document.querySelector('#step-2 .btn-next');
+            if (nextBtn) {
+                if (errors.length > 0) {
+                    nextBtn.style.opacity = '0.5';
+                    nextBtn.style.pointerEvents = 'none';
+                } else {
+                    nextBtn.style.opacity = '1';
+                    nextBtn.style.pointerEvents = 'auto';
+                }
+            }
+        }
+
+        function checkStep4() {
+            const errors = document.querySelectorAll('#step-4 [id^="error-"][style*="display: block"]');
+            const nextBtn = document.getElementById('btn-complete-mgr');
+            
+            const hasInput = document.getElementById('office-name').value.trim() !== '' ||
+                            document.getElementById('mgr-name-last').value.trim() !== '' ||
+                            document.getElementById('mgr-name-first').value.trim() !== '' ||
+                            document.getElementById('mgr-tel-input').value.trim() !== '' ||
+                            document.getElementById('mgr-email-input').value.trim() !== '';
+
+            if (nextBtn) {
+                if (hasInput) {
+                    nextBtn.innerText = t('btn_proceed_input');
+                } else {
+                    nextBtn.innerText = t('btn_skip_next');
+                }
+
+                if (errors.length > 0) {
+                    nextBtn.style.opacity = '0.5';
+                    nextBtn.style.pointerEvents = 'none';
+                } else {
+                    nextBtn.style.opacity = '1';
+                    nextBtn.style.pointerEvents = 'auto';
+                }
+            }
+        }
+
+        // Stripe Checkout Logic
+        function simulateStripeCheckout() {
+            const modal = document.getElementById('mockStripeModal');
+            modal.style.visibility = 'visible';
+            modal.style.opacity = '1';
+            modal.classList.add('active');
+        }
+
+        function handleStripeResult(success) {
+            document.getElementById('mockStripeModal').classList.remove('active');
+            // Give time for modal exit animation to finish
+            setTimeout(() => {
+                const modal = document.getElementById('mockStripeModal');
+                modal.style.visibility = 'hidden';
+                modal.style.opacity = '0';
+                
+                if (success) {
+                    window.location.href = 'dashboard.html';
+                } else {
+                    const errorBanner = document.getElementById('stripe-error-banner');
+                    errorBanner.style.display = 'block';
+                    errorBanner.classList.add('anim-fade');
+                }
+            }, 400);
+        }
+
+        function formatCardNumber(input) {
+            let val = input.value.replace(/\D/g, '');
+            let formatted = '';
+            for (let i = 0; i < val.length; i++) {
+                if (i > 0 && i % 4 === 0) formatted += ' ';
+                formatted += val[i];
+            }
+            input.value = formatted.substring(0, 19);
+        }
+
+        function executeMockStripePayment(forceFail = false) {
+            const btn = document.getElementById('stripe-pay-btn');
+            
+            if(!forceFail) {
+                const cardNum = document.getElementById('stripe-card-num').value.replace(/\s/g, '');
+                if(cardNum.length > 0 && cardNum.length < 14) {
+                    btn.style.transform = 'translateX(-5px)';
+                    setTimeout(() => btn.style.transform = 'translateX(5px)', 50);
+                    setTimeout(() => btn.style.transform = 'translateX(-5px)', 100);
+                    setTimeout(() => btn.style.transform = 'translateX(0)', 150);
+                    alert(t('error_card_num'));
+                    return;
+                }
+            }
+
+            btn.innerHTML = '<span style="display:inline-block; width:16px; height:16px; border:2px solid rgba(255,255,255,0.3); border-radius:50%; border-top-color:transparent; animation:spin 0.8s linear infinite;"></span>' + t('btn_processing');
+            btn.style.opacity = '0.8';
+            btn.style.pointerEvents = 'none';
+
+            // Simulate Stripe processing delay
+            setTimeout(() => {
+                btn.innerHTML = `<span data-i18n="btn_stripe_pay">${t('btn_stripe_pay')}</span>`;
+                btn.style.opacity = '1';
+                btn.style.pointerEvents = 'auto';
+                
+                if(forceFail) {
+                    handleStripeResult(false);
+                } else {
+                    handleStripeResult(true);
+                }
+            }, 1200);
+        }
+
+        // Plan Selection Logic
+        let currentPlanName = 'スタンダード';
+        let currentPlanPrice = 900;
+        let currentPlanDesc = '1TB';
+
+        function selectPlan(id, price, descRaw) {
+            document.querySelectorAll('.plan-card').forEach(card => {
+                card.style.border = '1px solid #e2e8f0';
+                card.style.background = '#fff';
+            });
+            const el = document.getElementById('plan-' + id);
+            el.style.border = '2px solid var(--primary-color)';
+            el.style.background = '#FFF0F5';
+            
+            if (id === 'basic') {
+                currentPlanName = t('plan_basic');
+                currentPlanDesc = '0.5TB';
+            } else if (id === 'standard') {
+                currentPlanName = t('plan_standard');
+                currentPlanDesc = '1TB';
+            } else if (id === 'premium') {
+                currentPlanName = t('plan_premium');
+                currentPlanDesc = '2TB';
+            }
+            currentPlanPrice = price;
+        }
+
+        function confirmPlan() {
+            const planSuffix = t('selected_plan_suffix');
+            const descPrefix = t('selected_plan_desc_prefix');
+            const descSuffix = t('selected_plan_desc_suffix');
+            const monthText = t('plan_month');
+
+            // Setup Step 6 dynamic values
+            document.getElementById('display-plan-name').innerText = currentPlanName + planSuffix;
+            document.getElementById('display-plan-price').innerHTML = `¥${currentPlanPrice.toLocaleString()} <span style="font-size: 14px; color: var(--text-sub);">${monthText}</span>`;
+            document.getElementById('display-plan-desc').innerText = descPrefix + currentPlanDesc + descSuffix;
+
+            document.getElementById('mock-plan-name').innerText = t('modal_plan_prefix') + currentPlanName + planSuffix;
+            document.getElementById('mock-plan-price').innerHTML = `¥${currentPlanPrice.toLocaleString()}<span style="font-size:16px; color:#718096; font-weight:800;">${monthText}</span>`;
+        }
+    </script>
+    <script src="app.js"></script>
+</body>
+</html>

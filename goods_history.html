@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>グッズ管理・発注履歴 - MYアルバム アーティスト</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="lang.js"></script>
+    <style>
+        .goods-card { background: #FFF; border-radius: 20px; border: 1px solid rgba(0,0,0,0.05); margin-bottom: 20px; overflow: hidden; position: relative; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
+        .gc-header { padding: 12px 16px; border-bottom: 1px solid rgba(0,0,0,0.03); display: flex; align-items: center; justify-content: space-between; background: #F8F9FB; }
+        .gc-order-id { font-size: 11px; font-weight: 900; color: var(--text-sub); }
+        .gc-date { font-size: 11px; font-weight: 800; color: var(--text-sub); }
+        
+        .gc-main { display: flex; padding: 16px; gap: 16px; align-items: flex-start; }
+        .thumb-wrap { width: 80px; height: 80px; flex-shrink: 0; border-radius: 12px; overflow: hidden; background:#EEE; border: 1px solid rgba(0,0,0,0.03); }
+        .gc-thumb { width: 100%; height: 100%; object-fit: cover; mix-blend-mode: multiply; }
+        
+        .gc-info { flex: 1; min-width: 0; }
+        .gc-title { font-size: 15px; font-weight: 950; line-height: 1.4; margin-bottom: 8px; color: var(--text-main); }
+        .gc-meta-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+        .gc-label { font-size: 11px; font-weight: 800; color: var(--text-sub); }
+        .gc-value { font-size: 13px; font-weight: 900; color: var(--text-main); }
+        .gc-price { font-size: 15px; font-weight: 950; color: var(--primary-color); }
+
+        .status-badge { padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 900; border: 1px solid transparent; }
+        .status-preparing { background: #FFF3E0; color: #E65100; border-color: rgba(230, 81, 0, 0.2); }
+        .status-manufacturing { background: #E3F2FD; color: #1565C0; border-color: rgba(21, 101, 192, 0.2); }
+        .status-shipped { background: #E8F5E9; color: #2E7D32; border-color: rgba(46, 125, 50, 0.2); }
+
+        .gc-actions { padding: 12px 16px; border-top: 1px solid rgba(0,0,0,0.03); display: flex; gap: 12px; }
+        .btn-action { flex: 1; padding: 12px; border-radius: 12px; font-size: 12px; font-weight: 900; text-align: center; cursor: pointer; transition: 0.2s; }
+        .btn-detail { background: #F2F2F7; color: var(--text-main); }
+        .btn-detail:active { background: #E5E5EA; }
+        .btn-sell { background: linear-gradient(135deg, var(--primary-color), var(--primary-light)); color: white; box-shadow: 0 4px 10px rgba(255,107,0,0.2); border: none; }
+        .btn-sell:active { transform: scale(0.97); }
+
+        /* Modal Styles */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; visibility: hidden; opacity: 0; transition: 0.3s ease; display: block !important; }
+        .modal-overlay.active { visibility: visible; opacity: 1; }
+        .modal-sheet { position: fixed; top: 0; left: 50%; transform: translateX(-50%) translateY(100vh); width: 100%; max-width: 430px; height: 100vh; background: var(--bg-color, #F4F5F7); z-index: 1001; transition: 0.4s cubic-bezier(0.19, 1, 0.22, 1); overflow-y: auto; display: flex; flex-direction: column; }
+        .modal-overlay.active .modal-sheet { transform: translateX(-50%) translateY(0); }
+        .modal-header-nav { padding: 16px; position: sticky; top: 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); z-index: 50; border-bottom: 1px solid rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: space-between; }
+        .modal-back-btn { font-size: 24px; color: var(--text-main); cursor: pointer; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; font-weight: 300; }
+        .modal-title { font-size: 15px; font-weight: 900; color: var(--text-main); }
+        
+        .detail-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px dashed rgba(0,0,0,0.05); }
+        .detail-row:last-child { border-bottom: none; }
+        .detail-lbl { font-size: 12px; font-weight: 800; color: var(--text-sub); }
+        .detail-val { font-size: 13px; font-weight: 900; color: var(--text-main); text-align: right; }
+        
+        .create-fab { position: fixed; bottom: 80px; right: 20px; width: 56px; height: 56px; border-radius: 28px; background: linear-gradient(135deg, var(--primary-color), var(--primary-light)); color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 8px 20px rgba(255,107,0,0.3); z-index: 100; cursor: pointer; transition: 0.2s; text-decoration: none; }
+        .create-fab:active { transform: scale(0.9); }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <button class="btn-ghost" onclick="location.href='mypage.html'" style="font-size: 20px;">←</button>
+            <h1 class="header-title">グッズ管理・履歴</h1>
+            <div style="width: 32px;"></div>
+        </header>
+
+        <main class="p-4 anim-fade" style="padding-bottom: 110px;">
+            <div id="goods-list">
+                <!-- Data will be injected here -->
+            </div>
+        </main>
+
+        <a href="goods_create.html" class="create-fab">
+            <span>+</span>
+        </a>
+
+        <!-- Detail Modal -->
+        <div class="modal-overlay" id="detailModal">
+            <div class="modal-sheet">
+                <div class="modal-header-nav">
+                    <div class="modal-back-btn" onclick="closeDetailModal()">‹</div>
+                    <div class="modal-title">注文詳細</div>
+                    <div style="width: 32px;"></div>
+                </div>
+                <div class="p-4" id="detailContent">
+                    <!-- Detail injected here -->
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const goodsData = [
+            {
+                id: "ORD-20260401-01",
+                date: "2026/04/01",
+                title: "2026 Spring Tour Tシャツ (Black)",
+                qty: "150枚",
+                price: "¥225,000",
+                status: "manufacturing",
+                statusLabel: "製造中",
+                thumb: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+                details: {
+                    color: "Black",
+                    sizes: "S: 30, M: 60, L: 40, XL: 20",
+                    unitPrice: "¥1,500",
+                    shipping: "¥2,000",
+                    tax: "¥22,700",
+                    address: "東京都渋谷区神宮前1-2-3 (事務所)",
+                    payment: "クレジットカード (末尾4242)"
+                }
+            },
+            {
+                id: "ORD-20260315-02",
+                date: "2026/03/15",
+                title: "アクリルスタンド (ライブ衣装Ver.)",
+                qty: "300個",
+                price: "¥120,000",
+                status: "shipped",
+                statusLabel: "発送済み / 販売可能",
+                thumb: "https://images.unsplash.com/photo-1590845947376-2638caa89309?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+                details: {
+                    color: "フルカラー",
+                    sizes: "W70×H100mm",
+                    unitPrice: "¥400",
+                    shipping: "¥1,000",
+                    tax: "¥12,100",
+                    address: "東京都渋谷区神宮前1-2-3 (事務所)",
+                    payment: "クレジットカード (末尾4242)"
+                }
+            },
+            {
+                id: "ORD-20260405-01",
+                date: "2026/04/05",
+                title: "推し活 ペンライト (ロゴ入り)",
+                qty: "200本",
+                price: "¥300,000",
+                status: "preparing",
+                statusLabel: "データ確認中",
+                thumb: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+                details: {
+                    color: "14色発光",
+                    sizes: "フリー",
+                    unitPrice: "¥1,500",
+                    shipping: "¥2,000",
+                    tax: "¥30,200",
+                    address: "東京都渋谷区神宮前1-2-3 (事務所)",
+                    payment: "クレジットカード (末尾4242)"
+                }
+            }
+        ];
+
+        function renderGoodsList() {
+            const listObj = document.getElementById('goods-list');
+            let html = '';
+            
+            goodsData.forEach((item, index) => {
+                let badgeClass = 'status-preparing';
+                if(item.status === 'manufacturing') badgeClass = 'status-manufacturing';
+                if(item.status === 'shipped') badgeClass = 'status-shipped';
+
+                html += `
+                <div class="goods-card">
+                    <div class="gc-header">
+                        <span class="gc-order-id">${item.id}</span>
+                        <span class="gc-date">${item.date}</span>
+                    </div>
+                    <div class="gc-main">
+                        <div class="thumb-wrap"><img src="${item.thumb}" class="gc-thumb" alt="${item.title}"></div>
+                        <div class="gc-info">
+                            <div class="gc-title">${item.title}</div>
+                            <div class="gc-meta-row">
+                                <span class="gc-label">発注数量</span>
+                                <span class="gc-value">${item.qty}</span>
+                            </div>
+                            <div class="gc-meta-row">
+                                <span class="gc-label">ステータス</span>
+                                <span class="status-badge ${badgeClass}">${item.statusLabel}</span>
+                            </div>
+                            <div class="gc-meta-row" style="margin-top:8px;">
+                                <span class="gc-label">合計金額</span>
+                                <span class="gc-price">${item.price}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="gc-actions">
+                        <button class="btn-action btn-detail" onclick="openDetailModal(${index})">詳細を見る</button>
+                        <button class="btn-action btn-sell" onclick="location.href='goods_sales_setting.html?id=${index}'">ファンへ販売する</button>
+                    </div>
+                </div>
+                `;
+            });
+
+            listObj.innerHTML = html;
+        }
+
+        function openDetailModal(index) {
+            const item = goodsData[index];
+            const content = document.getElementById('detailContent');
+            
+            content.innerHTML = `
+                <div style="text-align:center; margin-bottom:24px;">
+                    <img src="${item.thumb}" style="width:120px; height:120px; object-fit:cover; border-radius:16px; margin-bottom:16px; border:1px solid rgba(0,0,0,0.05);">
+                    <div style="font-size:16px; font-weight:950; color:var(--text-main); margin-bottom:8px;">${item.title}</div>
+                    <div style="font-size:24px; font-weight:950; color:var(--primary-color);">${item.price}</div>
+                </div>
+
+                <div style="background:white; border-radius:16px; padding:16px; border:1px solid rgba(0,0,0,0.03); margin-bottom:24px; box-shadow:0 4px 10px rgba(0,0,0,0.02);">
+                    <h3 style="font-size:14px; margin-bottom:12px;">注文情報</h3>
+                    <div class="detail-row"><span class="detail-lbl">注文番号</span><span class="detail-val">${item.id}</span></div>
+                    <div class="detail-row"><span class="detail-lbl">注文日</span><span class="detail-val">${item.date}</span></div>
+                    <div class="detail-row"><span class="detail-lbl">ステータス</span><span class="detail-val">${item.statusLabel}</span></div>
+                </div>
+
+                <div style="background:white; border-radius:16px; padding:16px; border:1px solid rgba(0,0,0,0.03); margin-bottom:24px; box-shadow:0 4px 10px rgba(0,0,0,0.02);">
+                    <h3 style="font-size:14px; margin-bottom:12px;">商品仕様</h3>
+                    <div class="detail-row"><span class="detail-lbl">カラー</span><span class="detail-val">${item.details.color}</span></div>
+                    <div class="detail-row"><span class="detail-lbl">サイズと数量</span><span class="detail-val">${item.details.sizes}</span></div>
+                </div>
+
+                <div style="background:white; border-radius:16px; padding:16px; border:1px solid rgba(0,0,0,0.03); margin-bottom:24px; box-shadow:0 4px 10px rgba(0,0,0,0.02);">
+                    <h3 style="font-size:14px; margin-bottom:12px;">配送・決済設定</h3>
+                    <div class="detail-row"><span class="detail-lbl">配送先</span><span class="detail-val">${item.details.address}</span></div>
+                    <div class="detail-row"><span class="detail-lbl">決済方法</span><span class="detail-val">${item.details.payment}</span></div>
+                </div>
+            `;
+
+            document.getElementById('detailModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+            setTimeout(() => {
+                document.querySelector('#detailModal .modal-sheet').scrollTop = 0;
+            }, 10);
+        }
+
+        function closeDetailModal() {
+            document.getElementById('detailModal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        document.addEventListener('DOMContentLoaded', renderGoodsList);
+
+    </script>
+</body>
+</html>

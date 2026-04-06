@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>新規アルバムを作成</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --nav-height: 80px;
+        }
+
+        body { padding-bottom: calc(var(--nav-height) + 20px); -webkit-tap-highlight-color: transparent; }
+        
+        .page-header { padding: 16px; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 50; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); }
+        .back-btn { font-size: 24px; color: var(--text-main); text-decoration: none; width: 32px;}
+        .page-title { font-size: 16px; font-weight: 900; }
+        
+        .form-area { padding: 24px 16px; }
+        .f-title { font-size: 13px; font-weight: 800; margin-bottom: 8px; color: var(--text-main); }
+        .f-input { width: 100%; border: 1px solid var(--border-color); background: #FFF; padding: 16px; border-radius: 12px; font-size: 16px; font-weight: 700; color: var(--text-main); margin-bottom: 24px; font-family: inherit; }
+        .f-input::placeholder { color: var(--text-sub); font-weight: 600; }
+        .f-input:focus { outline: 2px solid var(--primary-color); border-color: transparent;}
+
+        .icon-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+        .icon-btn { aspect-ratio: 1; border-radius: 16px; background: #FFF; border: 2px solid var(--border-color); display: flex; align-items: center; justify-content: center; font-size: 32px; cursor: pointer; transition: 0.2s; }
+        .icon-btn.active { border-color: var(--primary-color); background: var(--primary-light); transform: scale(1.05); }
+
+        textarea.f-input { height: 120px; resize: none; }
+
+        .btn-next { width: 100%; background: var(--primary-color); color: #FFF; padding: 16px; border-radius: 16px; font-size: 16px; font-weight: 800; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 16px rgba(255,107,0,0.3); transition: 0.2s;}
+        .btn-next:active { transform: scale(0.98); }
+
+        /* Unified Bottom Nav */
+        .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; background-color: rgba(255,255,255,0.95); backdrop-filter: blur(10px); height: var(--nav-height); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid var(--border-color); z-index: 100; padding-bottom: env(safe-area-inset-bottom, 0px); }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-sub); text-decoration: none; font-size: 10px; font-weight: 700; gap: 4px; }
+        .nav-item.active { color: var(--primary-color); }
+        .nav-item svg { width: 24px; height: 24px; fill: currentColor; }
+        .nav-fab { background-color: var(--primary-color); color: white; width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: -30px; box-shadow: 0 4px 12px rgba(255,107,0,0.3); font-size: 32px; line-height: 1; text-decoration: none; border: 4px solid var(--bg-color); }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+
+        <header class="page-header">
+            <a href="javascript:history.back()" class="back-btn">‹</a>
+            <div class="page-title">新規アルバムを作成</div>
+            <div style="width: 32px;"></div>
+        </header>
+
+        <div class="form-area" style="padding-bottom: 110px;">
+            <div class="f-title">アルバムの名前</div>
+            <input type="text" id="albumName" class="f-input" placeholder="例: 2024年 夏の思い出" value="">
+
+            <div class="f-title">アイコンを選択</div>
+            <div class="icon-grid" id="iconGrid">
+                <div class="icon-btn active" onclick="selectIcon(this, '📸')">📸</div>
+                <div class="icon-btn" onclick="selectIcon(this, '💖')">💖</div>
+                <div class="icon-btn" onclick="selectIcon(this, '🎉')">🎉</div>
+                <div class="icon-btn" onclick="selectIcon(this, '🤫')">🤫</div>
+                <div class="icon-btn" onclick="selectIcon(this, '🎤')">🎤</div>
+                <div class="icon-btn" onclick="selectIcon(this, '🚀')">🚀</div>
+                <div class="icon-btn" onclick="selectIcon(this, '🌻')">🌻</div>
+                <div class="icon-btn" style="font-size:14px; color:var(--text-sub); font-weight:800;">＋</div>
+            </div>
+
+            <div class="f-title">紹介文・メモ (任意)</div>
+            <textarea id="albumDesc" class="f-input" placeholder="このアルバムはどんなアルバムですか？"></textarea>
+
+            <button class="btn-next" onclick="createAlbum()">次へ ✨</button>
+        </div>
+
+        <nav class="bottom-nav">
+            <a href="dashboard.html" class="nav-item">
+                <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+                <span>ホーム</span>
+            </a>
+            <a href="album_edit.html" class="nav-item active">
+                <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                <span>MY投稿</span>
+            </a>
+            <a href="review.html" class="nav-item">
+                <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                <span>レビュー</span>
+            </a>
+            <a href="invite.html" class="nav-item">
+                <svg viewBox="0 0 24 24"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                <span>招待</span>
+            </a>
+            <a href="mypage.html" class="nav-item">
+                <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                <span>マイページ</span>
+            </a>
+        </nav>
+    </div>
+
+    
+
+    <script>
+        let selectedIconVal = '📸';
+        
+        function selectIcon(el, iconChar) {
+            document.querySelectorAll('.icon-btn').forEach(btn => btn.classList.remove('active'));
+            el.classList.add('active');
+            selectedIconVal = iconChar;
+        }
+
+        function createAlbum() {
+            const name = document.getElementById('albumName').value || '名称未設定アルバム';
+            const desc = document.getElementById('albumDesc').value;
+            
+            // Build object
+            const albumObj = {
+                name: name,
+                icon: selectedIconVal,
+                desc: desc
+            };
+
+            // Save to array in localStorage
+            let existing = JSON.parse(localStorage.getItem('myCustomAlbums') || '[]');
+            existing.unshift(albumObj);
+            localStorage.setItem('myCustomAlbums', JSON.stringify(existing));
+
+            // Set as current selected for the edit screen
+            localStorage.setItem('selectedCurrentAlbum', name);
+
+            // Navigate to upload actual content
+            location.href = 'album_edit.html';
+        }
+    </script>
+</body>
+</html>

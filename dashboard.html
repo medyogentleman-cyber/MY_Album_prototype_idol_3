@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title data-i18n="db_title">ダッシュボード - MYアルバム アーティスト</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="lang.js"></script>
+    <style>
+        .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 4px 0 16px; }
+        .stat-btn { background: linear-gradient(145deg, #ffffff, #fcfcfc); border: 1px solid rgba(0,0,0,0.02); border-radius: 16px; padding: 14px 4px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.03); transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; flex-direction: column; justify-content: center; }
+        .stat-btn:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.06); border-color: var(--primary-light); }
+        .stat-v { font-size: 17px; font-weight: 950; color: var(--primary-color); display: block; letter-spacing: -0.01em; }
+        .stat-v.money { color: #FF3366; font-size: 15px; }
+        .stat-v.heart { color: #FF6B81; }
+        .stat-l { font-size: 9.5px; color: var(--text-sub); font-weight: 800; margin-top: 6px; letter-spacing: -0.02em; }
+        
+        .sns-grid { display: flex; flex-direction: column; gap: 10px; }
+        .sns-item { display: flex; align-items: center; justify-content: space-between; padding: 12px; border-radius: 12px; background: white; border: 1px solid rgba(0,0,0,0.03); }
+        .sns-main { display: flex; align-items: center; gap: 12px; }
+
+        /* Updated fan list styles (Vertical - Premium) */
+        .fan-row { display: flex; flex-direction: column; gap: 14px; padding: 4px 0 16px; }
+        .fan-item { display: flex; align-items: center; gap: 16px; padding: 14px; background: white; border-radius: 20px; border: 1px solid rgba(0,0,0,0.02); cursor: pointer; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 4px 12px rgba(0,0,0,0.02); }
+        .fan-item:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.05); border-color: var(--primary-light); }
+        .fan-item:active { transform: scale(0.97); }
+        .fan-avatar { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; border: 2px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .fan-info { flex: 1; }
+        .fan-name { font-size: 15px; font-weight: 950; color: var(--text-main); margin-bottom: 3px; letter-spacing: -0.01em; }
+        .fan-date { font-size: 11px; color: var(--text-sub); font-weight: 700; opacity: 0.8; }
+        .fan-arrow { color: var(--primary-light); opacity: 0.5; font-size: 18px; font-weight: 900; }
+
+        /* Full Page Profile Modal Styles */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; visibility: hidden; opacity: 0; transition: 0.3s ease; display: block !important; }
+        .modal-overlay.active { visibility: visible; opacity: 1; }
+        .modal-sheet { position: fixed; top: 0; left: 50%; transform: translateX(-50%) translateY(100vh); width: 100%; max-width: 430px; height: 100vh; background: var(--bg-color, #F4F5F7); z-index: 1001; transition: 0.4s cubic-bezier(0.19, 1, 0.22, 1); overflow-y: auto; display: flex; flex-direction: column; }
+        .modal-overlay.active .modal-sheet { transform: translateX(-50%) translateY(0); }
+        
+        .modal-header-nav { padding: 16px; position: sticky; top: 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); z-index: 50; border-bottom: 1px solid rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: space-between; }
+        .modal-back-btn { font-size: 24px; color: var(--text-main); cursor: pointer; text-decoration: none; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; font-weight: 300; }
+        .modal-title { font-size: 15px; font-weight: 900; color: var(--text-main); }
+        
+        .profile-data-card { background: #FFF; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); padding: 24px 16px; border: 1px solid rgba(0,0,0,0.03); margin-bottom: 24px; }
+        .pd-img-row { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+        .pd-icon { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #EEE; }
+        .pd-name { font-size: 18px; font-weight: 950; color: var(--text-main); margin-bottom: 4px; }
+        .pd-date { font-size: 11px; font-weight: 800; color: var(--text-sub); }
+        .pd-label { font-size: 12px; font-weight: 900; color: var(--text-sub); margin-bottom: 8px; }
+        .pd-value { background: #F8F9FB; padding: 14px 16px; border-radius: 12px; font-size: 14px; font-weight: 800; color: var(--text-main); border: 1px solid rgba(0,0,0,0.02); margin-bottom: 20px; word-break: break-all; }
+        .pd-bio { background: #F8F9FB; padding: 16px; border-radius: 12px; font-size: 14px; font-weight: 600; color: var(--text-main); line-height: 1.6; border: 1px solid rgba(0,0,0,0.02); }
+        
+        .fp-archive-btn { width: 100%; border-radius: 16px; padding: 16px; font-size: 15px; font-weight: 900; background: linear-gradient(135deg, var(--primary-color), var(--primary-light)); border: none; color: white; box-shadow: 0 8px 20px rgba(255,107,0,0.2); transition: all 0.2s; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; }
+        .fp-archive-btn:active { transform: scale(0.97); }
+        .fp-archive-btn svg { transition: transform 0.3s; }
+        .fp-archive-btn.open svg { transform: rotate(180deg); }
+
+        .archives-container { display: none; margin-top: 24px; animation: slideDown 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .archives-container.active { display: block; }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Archive Card Style from my_albums.html */
+        .archive-card { background: #FFF; border-radius: 20px; border: 1px solid rgba(0,0,0,0.05); margin-bottom: 20px; overflow: hidden; position: relative; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
+        .ac-header { padding: 12px 16px; border-bottom: 1px solid rgba(0,0,0,0.03); display: flex; align-items: center; justify-content: space-between; }
+        .ac-platform { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 900; color: var(--text-main); }
+        .ac-platform img { width: 14px; height: 14px; object-fit: contain; }
+        .ac-main { display: flex; padding: 16px; gap: 16px; align-items: flex-start; }
+        .ac-info { flex: 1; min-width: 0; text-align: left; }
+        .ac-title { font-size: 15px; font-weight: 950; line-height: 1.4; margin-bottom: 6px; color: var(--text-main); }
+        .ac-date { font-size: 11px; color: var(--text-sub); font-weight: 800; }
+        .thumb-wrap { position: relative; width: 80px; height: 80px; flex-shrink: 0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .ac-thumb { width: 100%; height: 100%; object-fit: cover; }
+        .type-badge { position: absolute; bottom: 4px; left: 4px; padding: 4px 8px; border-radius: 6px; font-size: 9px; font-weight: 900; color: #FFF; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 6px rgba(0,0,0,0.2); backdrop-filter: blur(4px); }
+        .type-badge.video { background: rgba(255, 59, 48, 0.9); }
+        .type-badge.image { background: rgba(0, 122, 255, 0.9); }
+        
+        .ac-version-sec { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 16px; }
+        .v-row { display: flex; flex-direction: column; gap: 12px; padding: 16px; background: rgba(248,249,251,0.5); border-radius: 16px; border: 1px solid rgba(0,0,0,0.03); text-align: left; box-shadow: 0 2px 10px rgba(0,0,0,0.02); }
+        .v-name { font-size: 14px; font-weight: 950; color: var(--text-main); }
+        .v-time { font-size: 11px; color: var(--text-sub); font-weight: 800; margin-top: 4px; display: block; }
+        .v-thumb-edit { width: 100%; height: 130px; border-radius: 12px; object-fit: cover; background: #EEE; border: 1px solid rgba(0,0,0,0.05); }
+
+        /* Tipping Ranking Styles */
+        .ranking-list { padding: 16px; padding-bottom: 60px; display: flex; flex-direction: column; gap: 10px; }
+        .rank-item { display: flex; align-items: center; background: #FFF; border-radius: 16px; padding: 12px 16px; border: 1px solid rgba(0,0,0,0.03); box-shadow: 0 4px 10px rgba(0,0,0,0.02); }
+        .rank-item.rank-1 { background: linear-gradient(135deg, #FFFDE7, #FFF8E1); border: 1px solid #FFD54F; box-shadow: 0 6px 15px rgba(255,213,79,0.2); transform: scale(1.02); margin-bottom: 8px; position:relative; overflow:hidden;}
+        .rank-item.rank-1::after { content: '👑'; position:absolute; top:-4px; right:12px; font-size:32px; opacity:0.15; transform:rotate(15deg); pointer-events:none;}
+        .rank-item.rank-2 { background: linear-gradient(135deg, #F5F5F7, #EAEAEA); border: 1px solid #BDBDBD; margin-bottom: 4px; position:relative; overflow:hidden;}
+        .rank-item.rank-2::after { content: '🥈'; position:absolute; top:-4px; right:12px; font-size:32px; opacity:0.1; transform:rotate(15deg); pointer-events:none;}
+        .rank-item.rank-3 { background: linear-gradient(135deg, #FBE9E7, #FFCCBC); border: 1px solid #FFAB91; margin-bottom: 4px; position:relative; overflow:hidden;}
+        .rank-item.rank-3::after { content: '🥉'; position:absolute; top:-4px; right:12px; font-size:32px; opacity:0.1; transform:rotate(15deg); pointer-events:none;}
+        
+        .rank-num { font-size: 16px; font-weight: 950; width: 36px; flex-shrink: 0; color: var(--text-sub); display:flex; justify-content:center;}
+        .rank-1 .rank-num { color: #F57F17; font-size: 22px; text-shadow: 0 2px 4px rgba(245,127,23,0.3); }
+        .rank-2 .rank-num { color: #757575; font-size: 18px; }
+        .rank-3 .rank-num { color: #D84315; font-size: 18px; }
+
+        .rank-icon { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; margin-right: 12px; border: 2px solid #FFF; box-shadow: 0 2px 8px rgba(0,0,0,0.05);}
+        .rank-1 .rank-icon { width: 56px; height: 56px; border-color: #FFD54F; }
+        .rank-2 .rank-icon { width: 48px; height: 48px; border-color: #E0E0E0; }
+        .rank-3 .rank-icon { width: 48px; height: 48px; border-color: #FFCCBC; }
+
+        .rank-info { flex: 1; }
+        .rank-name { font-size: 14px; font-weight: 950; color: var(--text-main); margin-bottom:2px;}
+        .rank-c-name { font-size: 10px; font-weight: 800; color: var(--text-sub); background: rgba(0,0,0,0.04); padding: 2px 6px; border-radius: 6px; display: inline-block; margin-bottom: 2px;}
+        .rank-1 .rank-name { font-size: 16px; color:#3E2723;}
+        .rank-1 .rank-c-name { color:#795548; background:rgba(255,213,79,0.3);}
+
+        .rank-amount { font-size: 15px; font-weight: 900; color: #FF3366; letter-spacing:-0.02em;}
+        .rank-1 .rank-amount { font-size: 18px; text-shadow: 0 2px 4px rgba(255,51,102,0.2); }
+        
+        .stat-btn.highlight { background: linear-gradient(135deg, #FFF0F5, #FFE4E1); border-color: #FFB6C1; box-shadow: 0 4px 15px rgba(255, 51, 102, 0.15); transform: translateY(-2px); }
+        .stat-btn.highlight:hover { transform: translateY(-4px); box-shadow: 0 6px 20px rgba(255, 51, 102, 0.25); border-color: #FF3366; }
+        
+        .rank-item.clickable { cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
+        .rank-item.clickable:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,0,0,0.06); }
+        .rank-item.rank-1.clickable:hover { transform: scale(1.03) translateY(-2px); box-shadow: 0 8px 20px rgba(255,213,79,0.3); }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <h1 class="header-title anim-fade" data-i18n="db_home">ホーム</h1>
+            <a href="mypage.html" class="flex items-center gap-2" style="text-decoration:none; color:inherit;">
+                <span class="text-xs font-black" data-i18n="db_artist_name">蒼くみ</span>
+                <img src="images/icon/aoi_icon.png" alt="Profile" class="avatar" style="width:36px; height:36px; border-radius:50%; object-fit: cover;">
+            </a>
+        </header>
+
+        <main class="p-4 anim-fade" style="padding-bottom: 110px;">
+            <section class="mb-6">
+                <div class="stats-row">
+                    <div class="stat-btn"><span class="stat-v">48</span><span class="stat-l" data-i18n="stat_curators">キュレータ数</span></div>
+                    <div class="stat-btn"><span class="stat-v">345</span><span class="stat-l" data-i18n="stat_archives">アーカイブ数</span></div>
+                    <div class="stat-btn"><span class="stat-v">520</span><span class="stat-l" data-i18n="stat_posts">投稿数</span></div>
+                    <div class="stat-btn"><span class="stat-v">84</span><span class="stat-l" data-i18n="stat_god_certs">神認定数</span></div>
+                    <div class="stat-btn"><span class="stat-v heart">1,280</span><span class="stat-l" data-i18n="stat_likes">いいね</span></div>
+                    <div class="stat-btn highlight" onclick="openTippingModal()" style="cursor:pointer;"><span class="stat-v money">¥125,400</span><span class="stat-l" data-i18n="stat_tipping">投げ銭</span></div>
+                </div>
+                <p style="text-align: right; font-size: 10px; color: var(--text-sub); margin-top: -8px; margin-right: 4px;" data-i18n="stat_note">※上記の数値は総合計で記載されています</p>
+            </section>
+
+            <!-- New Fan Section (Vertical - Premium) -->
+            <section class="mb-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 style="font-size:18px; font-weight:950;" data-i18n="db_recent_fans">最近追加のあなたファン</h2>
+                </div>
+                <div class="fan-row">
+                    <!-- Fan 1 -->
+                    <div class="fan-item" onclick="openProfile(0)">
+                        <img src="./images/fans/fan_icon_1.png" class="fan-avatar">
+                        <div class="fan-info">
+                            <div class="fan-name">Hana_Kira</div>
+                            <div class="fan-date">2026/03/21</div>
+                        </div>
+                        <div class="fan-arrow">→</div>
+                    </div>
+                    <!-- Fan 2 -->
+                    <div class="fan-item" onclick="openProfile(1)">
+                        <img src="./images/fans/fan_icon_2.png" class="fan-avatar">
+                        <div class="fan-info">
+                            <div class="fan-name">PhotoMaster_Ken</div>
+                            <div class="fan-date">2026/03/20</div>
+                        </div>
+                        <div class="fan-arrow">→</div>
+                    </div>
+                    <!-- Fan 3 -->
+                    <div class="fan-item" onclick="openProfile(2)">
+                        <img src="./images/fans/fan_icon_3.png" class="fan-avatar">
+                        <div class="fan-info">
+                            <div class="fan-name">Yuki_Moe</div>
+                            <div class="fan-date">2026/03/19</div>
+                        </div>
+                        <div class="fan-arrow">→</div>
+                    </div>
+                    <!-- Fan 4 -->
+                    <div class="fan-item" onclick="openProfile(3)">
+                        <img src="./images/fans/fan_icon_4.png" class="fan-avatar">
+                        <div class="fan-info">
+                            <div class="fan-name">Digital_Creator_S</div>
+                            <div class="fan-date">2026/03/18</div>
+                        </div>
+                        <div class="fan-arrow">→</div>
+                    </div>
+                    <!-- Fan 5 -->
+                    <div class="fan-item" onclick="openProfile(4)">
+                        <img src="./images/fans/fan_icon_5.png" class="fan-avatar">
+                        <div class="fan-info">
+                            <div class="fan-name">Elegant_Nao</div>
+                            <div class="fan-date">2026/03/15</div>
+                        </div>
+                        <div class="fan-arrow">→</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="card mb-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 data-i18n="db_sns_status">SNS連携ステータス</h3>
+                    <a href="mypage.html" class="text-sub text-xs" data-i18n="db_sns_manage">管理</a>
+                </div>
+                <div class="sns-grid">
+                    <div class="sns-item">
+                        <div class="sns-main">
+                            <div class="sns-icon is-img"><img src="images/icon/X.png" alt="X"></div>
+                            <div><div class="text-xs font-black">X (Twitter)</div><div class="text-xs text-sub" data-i18n="sns_syncing">同期中</div></div>
+                        </div>
+                        <div class="badge badge-god" style="font-size:8px;" data-i18n="sns_linked">連携済</div>
+                    </div>
+                    <div class="sns-item">
+                        <div class="sns-main">
+                            <div class="sns-icon is-img"><img src="images/icon/Instagram.png" alt="Instagram"></div>
+                            <div><div class="text-xs font-black">Instagram</div><div class="text-xs text-sub" data-i18n="sns_syncing">同期中</div></div>
+                        </div>
+                        <div class="badge badge-god" style="font-size:8px;" data-i18n="sns_linked">連携済</div>
+                    </div>
+                    <div class="sns-item">
+                        <div class="sns-main">
+                            <div class="sns-icon is-img"><img src="images/icon/Youtube.png" alt="YouTube"></div>
+                            <div><div class="text-xs font-black">YouTube</div><div class="text-xs text-sub" data-i18n="sns_unlinked">未連携</div></div>
+                        </div>
+                        <div class="badge badge-unconfirmed" style="font-size:8px;" data-i18n="sns_unlinked">未連携</div>
+                    </div>
+                    <div class="sns-item">
+                        <div class="sns-main">
+                            <div class="sns-icon is-img"><img src="images/icon/Tictok.png" alt="TikTok"></div>
+                            <div><div class="text-xs font-black">TikTok</div><div class="text-xs text-sub" data-i18n="sns_syncing">同期中</div></div>
+                        </div>
+                        <div class="badge badge-god" style="font-size:8px;" data-i18n="sns_linked">連携済</div>
+                    </div>
+                    <div class="sns-item">
+                        <div class="sns-main">
+                            <div class="sns-icon is-img"><img src="images/icon/showroom.png" alt="SHOWROOM"></div>
+                            <div><div class="text-xs font-black">SHOWROOM</div><div class="text-xs text-sub" data-i18n="sns_unlinked">未連携</div></div>
+                        </div>
+                        <div class="badge badge-unconfirmed" style="font-size:8px;" data-i18n="sns_unlinked">未連携</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- MY Storage Contract Status -->
+            <section class="card mb-6" style="padding: 16px; background:#fff; border-radius:20px; box-shadow:0 4px 15px rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.03);">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 style="font-size:16px; font-weight:950;" data-i18n="db_storage_status">MYストレージ契約状況</h3>
+                    <div style="background:var(--primary-color); color:white; font-size:10px; font-weight:900; padding:4px 10px; border-radius:8px;" data-i18n="storage_active">契約中</div>
+                </div>
+                <div style="font-size: 14px; font-weight: 900; margin-bottom: 8px;" data-i18n="storage_plan">プラン: スタンダード</div>
+                <div style="font-size: 11px; color: var(--text-sub); font-weight: 700; margin-bottom: 16px; line-height: 1.5;" data-i18n="storage_desc">PC版 MYストレージ と連携して、高品質な大容量アーカイブをセキュアに受け取れます。</div>
+
+                <div style="background: #E8EFF2; border-radius: 16px; padding: 24px;">
+                    <div style="font-size: 15px; font-weight: 900; margin-bottom: 16px; color: #515C61;" data-i18n="storage_usage_title">伝送量の利用状況</div>
+                    
+                    <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px;">
+                        <span style="font-size:14px; font-weight:900; color:#515C61;" data-i18n="storage_total">伝送合計</span>
+                        <span style="font-size:18px; font-weight:900; color:#515C61;">1 TB<span style="font-size:12px;" data-i18n="storage_per_year"> /年間(12か月)</span></span>
+                    </div>
+                    <div style="width: 100%; height: 8px; background: #9EA8AD; border-radius: 4px; overflow: hidden; margin-bottom: 20px;">
+                        <div style="height: 100%; background: #616E73; border-radius: 4px; width: 49%;"></div>
+                    </div>
+
+                    <div style="display:flex; flex-direction:column; gap:10px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <span style="font-size:13px; font-weight:900; color:#515C61;" data-i18n="storage_remain">残伝送量</span>
+                            <span style="font-size:16px; font-weight:900; color:#515C61;">510.52 GB</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <span style="font-size:13px; font-weight:900; color:#515C61;" data-i18n="storage_deposited">預け量</span>
+                            <span style="font-size:16px; font-weight:900; color:#515C61;">1.47 GB</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <span style="font-size:13px; font-weight:900; color:#515C61;" data-i18n="storage_end_date">終了日</span>
+                            <span style="font-size:16px; font-weight:900; color:#515C61;">2027/03/25</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Full Page Modal Profile Overlay -->
+        <div class="modal-overlay" id="profileModal">
+            <div class="modal-sheet">
+                <div id="modalContent">
+                    <!-- Dynamic Content -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Tipping Modal -->
+        <div class="modal-overlay" id="tippingModal">
+            <div class="modal-sheet">
+                <div class="modal-header-nav">
+                    <div class="modal-back-btn" onclick="closeTippingModal()">‹</div>
+                    <div class="modal-title">投げ銭ランキング トップ20</div>
+                    <div style="width: 32px;"></div>
+                </div>
+                <div id="tippingModalContent" class="ranking-list">
+                    <!-- Dynamic Content -->
+                </div>
+            </div>
+        </div>
+
+        <nav class="bottom-nav">
+            <a href="dashboard.html" class="nav-item active">
+                <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+                <span data-i18n="nav_home">ホーム</span>
+            </a>
+            <a href="album_edit.html" class="nav-item">
+                <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                <span data-i18n="nav_post">MY投稿</span>
+            </a>
+            <a href="review.html" class="nav-item">
+                <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                <span data-i18n="nav_review">レビュー</span>
+            </a>
+            <a href="invite.html" class="nav-item">
+                <svg viewBox="0 0 24 24"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                <span data-i18n="nav_invite">招待</span>
+            </a>
+            <a href="mypage.html" class="nav-item">
+                <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                <span data-i18n="nav_mypage">マイページ</span>
+            </a>
+        </nav>
+    </div>
+
+    <script>
+        const fanData = [
+            {
+                name: "Hana_Kira",
+                icon: "./images/fans/fan_icon_1.png",
+                date: "2026/03/21",
+                bio: "あおいちゃんの笑顔が大好きです！毎日応援しています。最高の写真を撮るのが趣味です。ライブ全通目指してます！",
+                archives: [
+                    { title: "秘蔵！ファンミの裏側大公開！", date: "2026/3/21 11:05", thumb: "images/aoi_thumbnails/aoi_fan_meeting.png" },
+                    { title: "あおいちゃんの休日ショット", date: "2026/3/20 15:42", thumb: "images/aoi_thumbnails/aoi_instagram_post.png" }
+                ],
+                official: [
+                    { title: "【公認】2026 春のファン祭り！最前列ダイジェスト", date: "2026/03/21 18:45", thumb: "images/certified/video_thumb.png" }
+                ]
+            },
+            {
+                name: "PhotoMaster_Ken",
+                icon: "./images/fans/fan_icon_2.png",
+                date: "2026/03/20",
+                bio: "プロのカメラマンを目指しています。あおいちゃんの美しさを世界に広めたい！最新機材を揃えてライブに臨みます。",
+                archives: [
+                    { title: "レッスン終わりのクタクタトーク", date: "2026/3/21 09:12", thumb: "images/aoi_thumbnails/aoi_lesson_tired.png" }
+                ],
+                official: [
+                    { title: "ステージ上の奇跡：あおいちゃんの決定的な一瞬", date: "2026/3/21 18:30", thumb: "images/certified/aoi_1.png" }
+                ]
+            },
+            {
+                name: "Yuki_Moe",
+                icon: "./images/fans/fan_icon_3.png",
+                date: "2026/03/19",
+                bio: "あおいちゃんに憧れてます♡ いつかあおいちゃんみたいになりたい！ペンライトはいつも全力で降っています！",
+                archives: [],
+                official: [
+                    { title: "ファンミーティングでのふとした表情", date: "2026/03/21 18:35", thumb: "images/certified/aoi_2.png" }
+                ]
+            },
+            {
+                name: "Digital_Creator_S",
+                icon: "./images/fans/fan_icon_4.png",
+                date: "2026/03/18",
+                bio: "動画編集が特技です。あおいちゃんの魅力を動画で伝えたい。素材を活かしたシネマティックな編集が得意です。",
+                archives: [
+                    { title: "編集1 (自作リミックス)", date: "2026/03/21 12:45", thumb: "images/aoi_thumbnails/aoi_fan_meeting.png" }
+                ],
+                official: [
+                    { title: "ライブの熱気：光の海の中で", date: "2026/3/21 18:40", thumb: "images/certified/aoi_3.png" }
+                ]
+            },
+            {
+                name: "Elegant_Nao",
+                icon: "./images/fans/fan_icon_5.png",
+                date: "2026/03/15",
+                bio: "落ち着いた雰囲気のあおいちゃんも大好きです。ずっと応援しています。静かな情熱を持ってファン活しています。",
+                archives: [],
+                official: [
+                    { title: "休憩中のリラックス・スマイル", date: "2026/03/21 18:42", thumb: "images/certified/aoi_4.png" }
+                ]
+            }
+        ];
+
+        function openProfile(index) {
+            renderProfile(fanData[index]);
+        }
+
+        function openProfileByRank(index) {
+            const fan = tippingRankingData[index];
+            if(!fan.archives) fan.archives = [];
+            if(!fan.date) fan.date = "2026/03/24";
+            if(!fan.bio) fan.bio = "いつも応援しています！";
+            renderProfile(fan);
+        }
+
+        function renderProfile(fan) {
+            const content = document.getElementById('modalContent');
+            const rankCNameText = t('profile_creator_name');
+            const bioText = t('profile_bio');
+            
+            let archiveHTML = fan.archives && fan.archives.length > 0 ? fan.archives.map((a, i) => {
+                const isVideo = i % 2 === 0;
+                const badge = isVideo ? `<div class="type-badge video">${t('type_video')}</div>` : `<div class="type-badge image">${t('type_image')}</div>`;
+                return `
+                <div class="archive-card">
+                    <div class="ac-header">
+                        <div class="ac-platform"><img src="images/Myalbumlogo_small.png" style="width:14px; height:14px;"> ${t('profile_limited')}</div>
+                    </div>
+                    <div class="ac-main">
+                        <div class="thumb-wrap">
+                            <img class="ac-thumb" src="${a.thumb}">
+                            ${badge}
+                        </div>
+                        <div class="ac-info">
+                            <div class="ac-title">${a.title}</div>
+                            <div class="ac-date">${a.date}</div>
+                        </div>
+                    </div>
+                    <div class="ac-version-sec">
+                        <div class="v-row">
+                            <img src="${a.thumb}" class="v-thumb-edit" style="filter: brightness(1.1) contrast(1.1);">
+                            <div class="v-name">${isVideo ? t('v_fan_meeting') : t('v_color_correction')}</div>
+                            <div class="v-time">2026/03/21 12:45</div>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('') : `<div style="text-align:center; padding: 20px; color: var(--text-sub); font-weight: 800; font-size: 13px;">${t('profile_no_archive')}</div>`;
+
+            content.innerHTML = `
+                <div class="modal-header-nav">
+                    <div class="modal-back-btn" onclick="closeProfile()">‹</div>
+                    <div class="modal-title">${t('profile_modal_title')}</div>
+                    <div style="width: 32px;"></div>
+                </div>
+                
+                <div style="padding: 16px; padding-bottom: 60px;">
+                    <div class="profile-data-card">
+                        <div class="pd-img-row">
+                            <img src="${fan.icon}" class="pd-icon">
+                            <div>
+                                <div class="pd-name">${fan.name}</div>
+                                <div class="pd-date">${t('profile_date_prefix')}${fan.date}</div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="pd-label">${rankCNameText}</div>
+                            <div class="pd-value">${fan.name}</div>
+                        </div>
+                        
+                        <div>
+                            <div class="pd-label">${bioText}</div>
+                            <div class="pd-bio">${fan.bio}</div>
+                        </div>
+                    </div>
+
+                    <button class="fp-archive-btn" id="toggleArchiveBtn" onclick="toggleFanArchives()">
+                        ${t('profile_view_archives')}
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
+                    </button>
+
+                    <div id="fan-archives-list" class="archives-container">
+                        <div style="text-align: left; font-size: 16px; font-weight: 950; margin-bottom: 16px; margin-top: 24px; display: flex; align-items: center; gap: 8px; color: var(--text-main);">
+                            <span style="width: 4px; height: 16px; background: var(--primary-color); border-radius: 2px;"></span>
+                            ${t('profile_archive_list')}
+                        </div>
+                        ${archiveHTML}
+                    </div>
+                </div>
+            `;
+
+            const profileModal = document.getElementById('profileModal');
+            profileModal.style.zIndex = '2000'; // Ensure it opens above tipping modal
+            profileModal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            
+            setTimeout(() => {
+                document.querySelector('#profileModal .modal-sheet').scrollTop = 0;
+            }, 10);
+        }
+
+        function toggleFanArchives() {
+            const container = document.getElementById('fan-archives-list');
+            const btn = document.getElementById('toggleArchiveBtn');
+            const sheet = document.querySelector('#profileModal .modal-sheet');
+            
+            if (container.classList.contains('active')) {
+                container.classList.remove('active');
+                btn.classList.remove('open');
+                btn.innerHTML = `${t('profile_view_archives')} <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>`;
+            } else {
+                container.classList.add('active');
+                btn.classList.add('open');
+                btn.innerHTML = `${t('profile_close_archives')} <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M7 14l5-5 5 5z"/></svg>`;
+                
+                setTimeout(() => {
+                    sheet.scrollTo({
+                        top: btn.offsetTop - 16,
+                        behavior: 'smooth'
+                    });
+                }, 100);
+            }
+        }
+
+        function closeProfile() {
+            document.getElementById('profileModal').classList.remove('active');
+            if(!document.getElementById('tippingModal').classList.contains('active')){
+                document.body.style.overflow = '';
+            }
+        }
+
+        /* Tipping Ranking Logic */
+        const tippingRankingData = [
+            { name: "Hana_Kira", amount: "22,000", icon: "./images/fans/fan_icon_1.png" },
+            { name: "PhotoMaster_Ken", amount: "18,500", icon: "./images/fans/fan_icon_2.png" },
+            { name: "Yuki_Moe", amount: "14,000", icon: "./images/fans/fan_icon_3.png" },
+            { name: "Digital_Creator_S", amount: "12,000", icon: "./images/fans/fan_icon_4.png" },
+            { name: "Elegant_Nao", amount: "8,500", icon: "./images/fans/fan_icon_5.png" }
+        ];
+        
+        let baseAmount = 6000;
+        for(let i=6; i<=20; i++) {
+            tippingRankingData.push({
+                name: `Guest_Fan_${i}${Math.floor(Math.random()*100)}`,
+                amount: baseAmount.toLocaleString(),
+                icon: `./images/fans/fan_icon_${(i%5)+1}.png`
+            });
+            baseAmount -= Math.floor(Math.random() * 300 + 100);
+        }
+
+        function openTippingModal() {
+            const content = document.getElementById('tippingModalContent');
+            let html = '';
+            tippingRankingData.forEach((fan, index) => {
+                const rank = index + 1;
+                let rankClass = '';
+                let rankLabel = rank;
+                if(rank === 1) { rankClass = 'rank-1'; }
+                else if(rank === 2) { rankClass = 'rank-2'; }
+                else if(rank === 3) { rankClass = 'rank-3'; }
+                
+                html += `
+                <div class="rank-item ${rankClass} clickable" onclick="openProfileByRank(${index})">
+                    <div class="rank-num">${rankLabel}</div>
+                    <img src="${fan.icon}" class="rank-icon">
+                    <div class="rank-info">
+                        <div class="rank-c-name">${t('profile_creator_name')}</div>
+                        <div class="rank-name">${fan.name}</div>
+                    </div>
+                    <div class="rank-amount">¥${fan.amount}</div>
+                </div>
+                `;
+            });
+            content.innerHTML = html;
+            
+            // Set Modal Title based on language
+            const titleEl = document.querySelector('#tippingModal .modal-title');
+            if (titleEl) titleEl.innerText = t('tipping_modal_title');
+            
+            document.getElementById('tippingModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+
+            setTimeout(() => {
+                document.querySelector('#tippingModal .modal-sheet').scrollTop = 0;
+            }, 10);
+        }
+
+        function closeTippingModal() {
+            document.getElementById('tippingModal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    </script>
+    <script src="app.js"></script>
+</body>
+</html>

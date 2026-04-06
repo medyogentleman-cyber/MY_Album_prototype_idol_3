@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title data-i18n="mp_title">マイページ - MYアルバム アーティスト</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="lang.js"></script>
+    <style>
+        .profile-card { background: white; padding: 24px; border-radius: 24px; text-align: center; margin-bottom: 24px; }
+        .setting-section { background: white; border-radius: 20px; overflow: hidden; margin-bottom: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); }
+        .setting-item { padding: 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f2f2f7; }
+        .setting-item:last-child { border-bottom: none; }
+        .setting-label { display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 800; }
+        .sns-status-text { font-size: 11px; font-weight: 700; color: var(--text-sub); }
+        
+        /* Modal Styles */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; visibility: hidden; opacity: 0; transition: 0.3s ease; display: block !important; }
+        .modal-overlay.active { visibility: visible; opacity: 1; }
+        .modal-sheet { position: fixed; top: 0; left: 50%; transform: translateX(-50%) translateY(100vh); width: 100%; max-width: 430px; height: 100vh; background: var(--bg-color, #F4F5F7); z-index: 1001; transition: 0.4s cubic-bezier(0.19, 1, 0.22, 1); overflow-y: auto; display: flex; flex-direction: column; }
+        .modal-overlay.active .modal-sheet { transform: translateX(-50%) translateY(0); }
+        .modal-header-nav { padding: 16px; position: sticky; top: 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); z-index: 50; border-bottom: 1px solid rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: space-between; }
+        .modal-back-btn { font-size: 24px; color: var(--text-main); cursor: pointer; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; font-weight: 300; }
+        .modal-title { font-size: 15px; font-weight: 900; color: var(--text-main); }
+        .required-tag { font-size: 10px; font-weight: 800; color: #FFF; background: var(--danger); padding: 2px 6px; border-radius: 4px; margin-left: 8px; vertical-align: middle; }
+        .optional-tag { font-size: 10px; font-weight: 800; color: #8E8E93; background: #F2F2F7; padding: 2px 6px; border-radius: 4px; margin-left: 8px; vertical-align: middle; }
+        .w-full { width: 100%; }
+        .pb-24 { padding-bottom: 96px; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <button class="btn-ghost" onclick="history.back()" style="font-size: 20px;">←</button>
+            <h1 class="header-title" data-i18n="mp_title">マイページ</h1>
+            <div style="width: 32px;"></div>
+        </header>
+
+        <main class="p-4 anim-fade" style="padding-bottom: 110px;">
+            <div class="profile-card">
+                <div style="position: relative; display: inline-block;">
+                    <img id="my-avatar" src="images/icon/aoi_icon.png" class="avatar-lg" style="cursor: pointer; object-fit: cover;" onclick="document.getElementById('avatar-f').click()">
+                    <button class="btn-ghost" style="position: absolute; bottom: 0; right: 0; background: var(--primary-color); color: white; border-radius: 50%; width: 28px; height: 28px; padding: 0; font-size: 12px;" onclick="document.getElementById('avatar-f').click()">📸</button>
+                </div>
+                <input type="file" id="avatar-f" style="display:none;" onchange="previewImage(this, 'my-avatar')">
+                <h2 class="mt-4">蒼くみ</h2>
+                <p class="text-xs text-sub" data-i18n="mp_owner">蒼くみ Official HUB オーナー</p>
+            </div>
+
+            <h3 class="mb-4 ml-2" data-i18n="mp_acct_setting">アカウント設定</h3>
+            <div class="setting-section">
+                <div class="setting-item" onclick="openBasicInfo()" style="cursor:pointer;">
+                    <div class="setting-label" data-i18n="mp_basic_info">👤 基本情報の編集</div>
+                    <span style="color:var(--text-sub);">›</span>
+                </div>
+                <div class="setting-item" onclick="openMgrInfo()" style="cursor:pointer;">
+                    <div class="setting-label" data-i18n="mp_mgr_info">🏢 事務所・マネージャー連絡先の編集</div>
+                    <span style="color:var(--text-sub);">›</span>
+                </div>
+                <div class="setting-item" onclick="alert(t('mp_js_login_msg'))" style="cursor:pointer;">
+                    <div class="setting-label" data-i18n="mp_login_info">🔐 ログイン情報の変更</div>
+                    <span style="color:var(--text-sub);">›</span>
+                </div>
+                <div class="setting-item" onclick="appToggleLanguage()" style="cursor:pointer;">
+                    <div class="setting-label" data-i18n="mp_lang_setting">🌐 言語切替 / Language</div>
+                    <span id="current-lang-display" style="color:var(--text-sub); font-size:12px; font-weight:800;">日本語</span>
+                </div>
+            </div>
+
+            <h3 class="mb-4 ml-2" data-i18n="mp_goods_mgmt">オリジナルグッズ作成・管理</h3>
+            <div class="setting-section">
+                <div class="setting-item" onclick="location.href='goods_history.html'" style="cursor:pointer;">
+                    <div class="setting-label" data-i18n="mp_goods_history">📦 発注履歴 ＆ ファン向け販売設定</div>
+                    <span style="color:var(--text-sub);">›</span>
+                </div>
+                <div class="setting-item" onclick="location.href='goods_create.html'" style="cursor:pointer;">
+                    <div class="setting-label" data-i18n="mp_goods_create">✨ 新しいグッズを作成する</div>
+                    <span style="color:var(--text-sub);">›</span>
+                </div>
+            </div>
+
+            <h3 class="mb-4 ml-2" data-i18n="mp_sns_link">SNS自動連携設定</h3>
+            <div class="setting-section">
+                <div class="setting-item" style="flex-direction: column; align-items: stretch; gap: 8px;">
+                    <div class="flex items-center justify-between">
+                        <div class="setting-label"><div class="sns-icon is-img" style="width:24px; height:24px;"><img src="images/icon/X.png" alt="X"></div> X (Twitter)</div>
+                        <div class="flex items-center gap-3">
+                            <span class="sns-status-text" data-i18n="mp_sns_linked">連携中</span>
+                            <label class="toggle-switch"><input type="checkbox" checked><span class="slider"></span></label>
+                        </div>
+                    </div>
+                    <div class="text-xs" style="padding-left: 36px; padding-right: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        <span id="url-x" style="color:var(--primary-color); text-decoration: underline; cursor:pointer;" onclick="editSNSUrl('X (Twitter)', 'url-x')">https://x.com/aoikumi_official</span>
+                    </div>
+                </div>
+                <div class="setting-item" style="flex-direction: column; align-items: stretch; gap: 8px;">
+                    <div class="flex items-center justify-between">
+                        <div class="setting-label"><div class="sns-icon is-img" style="width:24px; height:24px;"><img src="images/icon/Instagram.png" alt="Instagram"></div> Instagram</div>
+                        <div class="flex items-center gap-3">
+                            <span class="sns-status-text" data-i18n="mp_sns_linked">連携中</span>
+                            <label class="toggle-switch"><input type="checkbox" checked><span class="slider"></span></label>
+                        </div>
+                    </div>
+                    <div class="text-xs" style="padding-left: 36px; padding-right: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        <span id="url-ig" style="color:var(--primary-color); text-decoration: underline; cursor:pointer;" onclick="editSNSUrl('Instagram', 'url-ig')">https://instagram.com/aoikumi_official</span>
+                    </div>
+                </div>
+                <div class="setting-item" style="flex-direction: column; align-items: stretch; gap: 8px;">
+                    <div class="flex items-center justify-between">
+                        <div class="setting-label"><div class="sns-icon is-img" style="width:24px; height:24px;"><img src="images/icon/Youtube.png" alt="YouTube"></div> YouTube</div>
+                        <div class="flex items-center gap-3">
+                            <span class="sns-status-text" style="color:var(--text-sub);" data-i18n="mp_sns_unlinked">未連携</span>
+                            <button class="btn btn-outline btn-sm" style="width:auto; padding:4px 12px; font-size:10px;" data-i18n="mp_sns_btn_link">連携する</button>
+                        </div>
+                    </div>
+                    <div class="text-xs" style="padding-left: 36px; padding-right: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        <span id="url-yt" style="color:var(--text-sub); text-decoration: underline; cursor:pointer;" onclick="editSNSUrl('YouTube', 'url-yt')" data-i18n="mp_sns_url_unset">URLを設定...</span>
+                    </div>
+                </div>
+                <div class="setting-item" style="flex-direction: column; align-items: stretch; gap: 8px;">
+                    <div class="flex items-center justify-between">
+                        <div class="setting-label"><div class="sns-icon is-img" style="width:24px; height:24px;"><img src="images/icon/Tictok.png" alt="TikTok"></div> TikTok</div>
+                        <div class="flex items-center gap-3">
+                            <span class="sns-status-text" data-i18n="mp_sns_linked">連携中</span>
+                            <label class="toggle-switch"><input type="checkbox" checked><span class="slider"></span></label>
+                        </div>
+                    </div>
+                    <div class="text-xs" style="padding-left: 36px; padding-right: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        <span id="url-tt" style="color:var(--primary-color); text-decoration: underline; cursor:pointer;" onclick="editSNSUrl('TikTok', 'url-tt')">https://tiktok.com/@aoikumi_official</span>
+                    </div>
+                </div>
+                <div class="setting-item" style="flex-direction: column; align-items: stretch; gap: 8px;">
+                    <div class="flex items-center justify-between">
+                        <div class="setting-label"><div class="sns-icon is-img" style="width:24px; height:24px;"><img src="images/icon/showroom.png" alt="SHOWROOM"></div> SHOWROOM</div>
+                        <div class="flex items-center gap-3">
+                            <span class="sns-status-text" style="color:var(--text-sub);" data-i18n="mp_sns_unlinked">未連携</span>
+                            <button class="btn btn-outline btn-sm" style="width:auto; padding:4px 12px; font-size:10px;" data-i18n="mp_sns_btn_link">連携する</button>
+                        </div>
+                    </div>
+                    <div class="text-xs" style="padding-left: 36px; padding-right: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        <span id="url-sr" style="color:var(--text-sub); text-decoration: underline; cursor:pointer;" onclick="editSNSUrl('SHOWROOM', 'url-sr')" data-i18n="mp_sns_url_unset">URLを設定...</span>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn btn-ghost" style="color:var(--danger); border: 1px solid rgba(255,59,48,0.1); background: white; border-radius:16px;" data-i18n="mp_logout">ログアウト</button>
+        </main>
+
+        <!-- Basic Info Modal -->
+        <div class="modal-overlay" id="basicInfoModal">
+            <div class="modal-sheet">
+                <div class="modal-header-nav">
+                    <div class="modal-back-btn" onclick="closeBasicInfo()">‹</div>
+                    <div class="modal-title" data-i18n="mp_b_modal_title">基本情報の編集</div>
+                    <div style="width: 32px;"></div>
+                </div>
+                
+                <div class="p-6 pb-24">
+                    <p class="text-sub mb-6 text-xs font-black" data-i18n="mp_b_modal_desc">アーティスト活動に使用する基本情報を編集します。</p>
+
+                    <div class="input-group mb-4">
+                        <label class="label"><span data-i18n="mp_b_name">氏名</span> <span class="required-tag" data-i18n="mp_lbl_req">必須</span></label>
+                        <div class="flex gap-2">
+                            <div style="flex:1;">
+                                <input type="text" id="edit-name-last" class="input" value="蒼" oninput="validateEditName('edit-name-last', 'error-edit-name-last')">
+                                <div id="error-edit-name-last" class="text-xs mt-1" style="display:none; color:var(--danger); font-weight:700;"></div>
+                            </div>
+                            <div style="flex:1;">
+                                <input type="text" id="edit-name-first" class="input" value="くみ" oninput="validateEditName('edit-name-first', 'error-edit-name-first')">
+                                <div id="error-edit-name-first" class="text-xs mt-1" style="display:none; color:var(--danger); font-weight:700;"></div>
+                            </div>
+                        </div>
+                        <div class="text-xs text-sub mt-1" data-i18n="mp_b_name_desc">※各10文字以内</div>
+                    </div>
+                    <div class="input-group mb-4">
+                        <label class="label"><span data-i18n="mp_b_tel">電話番号</span> <span class="required-tag" data-i18n="mp_lbl_req">必須</span></label>
+                        <input type="tel" id="edit-tel-input" class="input" value="09012345678" oninput="validateEditPhone()">
+                        <div class="text-xs text-sub mt-1" data-i18n="mp_b_tel_desc">※ハイフンなし</div>
+                        <div id="error-edit-tel" class="text-xs mt-1" style="display:none; color:var(--danger); font-weight:700;"></div>
+                    </div>
+                    <div class="input-group mb-4">
+                        <label class="label"><span data-i18n="mp_b_email">Email</span> <span class="required-tag" data-i18n="mp_lbl_req">必須</span></label>
+                        <input type="email" id="edit-email-input" class="input" value="akumi@officemock.com" oninput="validateEditEmail()">
+                        <div id="error-edit-email" class="text-xs mt-1" style="display:none; color:var(--danger); font-weight:700;"></div>
+                    </div>
+                    <div class="input-group mb-4">
+                        <label class="label"><span data-i18n="mp_b_zip">郵便番号</span> <span class="required-tag" data-i18n="mp_lbl_req">必須</span></label>
+                        <input type="tel" id="edit-zip-input" class="input" value="1500001" oninput="validateEditZip()" maxlength="7">
+                        <div class="text-xs text-sub mt-1" data-i18n="mp_b_zip_desc">※ハイフンなし</div>
+                        <div id="error-edit-zip" class="text-xs mt-1" style="display:none; color:var(--danger); font-weight:700;"></div>
+                    </div>
+                    <div class="input-group mb-12">
+                        <label class="label"><span data-i18n="mp_b_addr">住所</span> <span class="required-tag" data-i18n="mp_lbl_req">必須</span></label>
+                        <input type="text" id="edit-address-input" class="input" value="東京都渋谷区神宮前1-2-3" oninput="validateEditAddress()">
+                        <div class="text-xs text-sub mt-1" data-i18n="mp_b_addr_desc">※全角半角合計100文字以内</div>
+                        <div id="error-edit-address" class="text-xs mt-1" style="display:none; color:var(--danger); font-weight:700;"></div>
+                    </div>
+
+                    <button class="btn btn-primary w-full" id="btn-save-basic" onclick="saveBasicInfo()" data-i18n="mp_btn_save">保存する</button>
+                    
+                    <!-- Success Toast (Hidden initially) -->
+                    <div id="toast-success" style="opacity:0; visibility:hidden; transition:0.3s; position:fixed; bottom: 80px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.85); color:white; padding:12px 24px; border-radius:24px; font-size:13px; font-weight:800; z-index:2000; box-shadow:0 8px 24px rgba(0,0,0,0.2);" data-i18n="mp_msg_save_success">
+                        ✨ 保存しました。
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manager Info Modal -->
+        <div class="modal-overlay" id="mgrInfoModal">
+            <div class="modal-sheet">
+                <div class="modal-header-nav">
+                    <div class="modal-back-btn" onclick="closeMgrInfo()">‹</div>
+                    <div class="modal-title" data-i18n="mp_m_modal_title">事務所・マネージャー連絡先</div>
+                    <div style="width: 32px;"></div>
+                </div>
+                
+                <div class="p-6 pb-24">
+                    <p class="text-sub mb-6 text-xs font-black" data-i18n="mp_m_modal_desc">運営からのお知らせなどを送付する任意連絡先です。</p>
+
+                    <div class="input-group mb-4">
+                        <label class="label"><span data-i18n="mp_m_office">事務所名</span> <span class="optional-tag" data-i18n="mp_lbl_opt">任意</span></label>
+                        <input type="text" id="edit-office-name" class="input" value="〇〇エンターテインメント" oninput="validateEditOfficeName()">
+                        <div class="text-xs text-sub mt-1" data-i18n="mp_m_office_desc">※全角半角50文字以内</div>
+                        <div id="error-edit-office-name" class="text-xs mt-1" style="display:none; color:var(--danger); font-weight:700;"></div>
+                    </div>
+                    <div class="input-group mb-4">
+                        <label class="label"><span data-i18n="mp_m_mgr_name">担当マネージャー名</span> <span class="optional-tag" data-i18n="mp_lbl_opt">任意</span></label>
+                        <div class="flex gap-2">
+                            <div style="flex:1;">
+                                <input type="text" id="edit-mgr-name-last" class="input" value="佐藤" oninput="validateEditManagerName('edit-mgr-name-last', 'error-edit-mgr-name-last')">
+                                <div id="error-edit-mgr-name-last" class="text-xs mt-1" style="display:none; color:var(--danger); font-weight:700;"></div>
+                            </div>
+                            <div style="flex:1;">
+                                <input type="text" id="edit-mgr-name-first" class="input" value="太郎" oninput="validateEditManagerName('edit-mgr-name-first', 'error-edit-mgr-name-first')">
+                                <div id="error-edit-mgr-name-first" class="text-xs mt-1" style="display:none; color:var(--danger); font-weight:700;"></div>
+                            </div>
+                        </div>
+                        <div class="text-xs text-sub mt-1" data-i18n="mp_m_mgr_name_desc">※各10文字以内</div>
+                    </div>
+                    <div class="input-group mb-4">
+                        <label class="label"><span data-i18n="mp_m_mgr_tel">担当者電話番号</span> <span class="optional-tag" data-i18n="mp_lbl_opt">任意</span></label>
+                        <input type="tel" id="edit-mgr-tel-input" class="input" value="09098765432" oninput="validateEditMgrPhone()">
+                        <div class="text-xs text-sub mt-1" data-i18n="mp_m_mgr_tel_desc">※ハイフンなし</div>
+                        <div id="error-edit-mgr-tel" class="text-xs mt-1" style="display:none; color:var(--danger); font-weight:700;"></div>
+                    </div>
+                    <div class="input-group mb-12">
+                        <label class="label"><span data-i18n="mp_m_mgr_email">担当者メールアドレス</span> <span class="optional-tag" data-i18n="mp_lbl_opt">任意</span></label>
+                        <input type="email" id="edit-mgr-email-input" class="input" value="manager@office.com" oninput="validateEditMgrEmail()">
+                        <div id="error-edit-mgr-email" class="text-xs mt-1" style="display:none; color:var(--danger); font-weight:700;"></div>
+                    </div>
+
+                    <button class="btn btn-primary w-full" id="btn-save-mgr" onclick="saveMgrInfo()" data-i18n="mp_btn_save">保存する</button>
+                    
+                    <!-- Success Toast (Hidden initially) -->
+                    <div id="toast-success-mgr" style="opacity:0; visibility:hidden; transition:0.3s; position:fixed; bottom: 80px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.85); color:white; padding:12px 24px; border-radius:24px; font-size:13px; font-weight:800; z-index:2000; box-shadow:0 8px 24px rgba(0,0,0,0.2);" data-i18n="mp_msg_save_success">
+                        ✨ 保存しました。
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <nav class="bottom-nav">
+            <a href="dashboard.html" class="nav-item">
+                <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+                <span data-i18n="nav_home">ホーム</span>
+            </a>
+            <a href="album_edit.html" class="nav-item">
+                <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                <span data-i18n="nav_post">MY投稿</span>
+            </a>
+            <a href="review.html" class="nav-item">
+                <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                <span data-i18n="nav_review">レビュー</span>
+            </a>
+            <a href="invite.html" class="nav-item">
+                <svg viewBox="0 0 24 24"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                <span data-i18n="nav_invite">招待</span>
+            </a>
+            <a href="mypage.html" class="nav-item active">
+                <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                <span data-i18n="nav_mypage">マイページ</span>
+            </a>
+        </nav>
+    </div>
+    <script>
+        function editSNSUrl(platformName, elementId) {
+            const el = document.getElementById(elementId);
+            const currentStr = el.innerText;
+            const unsetStr = t('mp_sns_url_unset');
+            const initialVal = (currentStr === unsetStr || currentStr === '未設定') ? '' : currentStr;
+            const newUrl = prompt(`${platformName}${t('mp_js_sns_prompt')}`, initialVal);
+
+            if (newUrl !== null) {
+                if (newUrl.trim() === '') {
+                    el.innerText = unsetStr;
+                    el.style.color = 'var(--text-sub)';
+                } else {
+                    el.innerText = newUrl.trim();
+                    el.style.color = 'var(--primary-color)';
+                }
+            }
+        }
+
+        function appToggleLanguage() {
+            const nextLang = currentLang === 'ja' ? 'en' : 'ja';
+            setLanguage(nextLang);
+            updateToggleUI();
+        }
+
+        function updateToggleUI() {
+            const el = document.getElementById('current-lang-display');
+            if (el) el.innerText = currentLang === 'ja' ? '日本語' : 'English';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            updateToggleUI();
+        });
+
+        // Basic Info Form Logic
+        function openBasicInfo() {
+            document.getElementById('basicInfoModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+            setTimeout(() => {
+                document.querySelector('#basicInfoModal .modal-sheet').scrollTop = 0;
+            }, 10);
+        }
+
+        function closeBasicInfo() {
+            document.getElementById('basicInfoModal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function validateEditName(id, errorId) {
+            const input = document.getElementById(id);
+            const error = document.getElementById(errorId);
+            if (input.value.length > 10) {
+                error.innerText = t('mp_js_err_10_chars');
+                error.style.display = 'block';
+                input.style.borderColor = 'var(--danger)';
+            } else {
+                error.style.display = 'none';
+                input.style.borderColor = '';
+            }
+            checkBasicInfoForm();
+        }
+
+        function validateEditPhone() {
+            const input = document.getElementById('edit-tel-input');
+            const error = document.getElementById('error-edit-tel');
+            if (input.value.includes('-')) {
+                input.value = input.value.replace(/-/g, '');
+            }
+            const val = input.value;
+            if (val.length > 11) {
+                error.innerText = t('mp_js_err_11_nums');
+                error.style.display = 'block';
+                input.style.borderColor = 'var(--danger)';
+            } else if (val.length > 0 && !/^\d+$/.test(val)) {
+                error.innerText = t('mp_js_err_nums_only');
+                error.style.display = 'block';
+                input.style.borderColor = 'var(--danger)';
+            } else {
+                error.style.display = 'none';
+                input.style.borderColor = '';
+            }
+            checkBasicInfoForm();
+        }
+
+        function validateEditEmail() {
+            const input = document.getElementById('edit-email-input');
+            const error = document.getElementById('error-edit-email');
+            const val = input.value;
+            if (val.length > 0 && !val.includes('@')) {
+                error.innerText = t('mp_js_err_email');
+                error.style.display = 'block';
+                input.style.borderColor = 'var(--danger)';
+            } else {
+                error.style.display = 'none';
+                input.style.borderColor = '';
+            }
+            checkBasicInfoForm();
+        }
+
+        async function validateEditZip() {
+            const input = document.getElementById('edit-zip-input');
+            const error = document.getElementById('error-edit-zip');
+            if (input.value.includes('-')) {
+                input.value = input.value.replace(/-/g, '');
+            }
+            const val = input.value;
+            
+            if (val.length > 0 && !/^\d+$/.test(val)) {
+                error.innerText = t('mp_js_err_nums_only');
+                error.style.display = 'block';
+                input.style.borderColor = 'var(--danger)';
+            } else if (val.length > 7) {
+                error.innerText = t('mp_js_err_7_nums');
+                error.style.display = 'block';
+                input.style.borderColor = 'var(--danger)';
+            } else {
+                error.style.display = 'none';
+                input.style.borderColor = '';
+                
+                if (val.length === 7) {
+                    try {
+                        const response = await fetch(`https://zipcloud.ibsnet.co.jp/api/search?zipcode=${val}`);
+                        const data = await response.json();
+                        if (data.status === 200 && data.results) {
+                            const result = data.results[0];
+                            const addrInput = document.getElementById('edit-address-input');
+                            addrInput.value = `${result.address1}${result.address2}${result.address3}`;
+                            validateEditAddress();
+                        }
+                    } catch (e) { console.error('API Error:', e); }
+                }
+            }
+            checkBasicInfoForm();
+        }
+
+        function validateEditAddress() {
+            const input = document.getElementById('edit-address-input');
+            const error = document.getElementById('error-edit-address');
+            if (input.value.length > 100) {
+                error.innerText = t('mp_js_err_100_chars');
+                error.style.display = 'block';
+                input.style.borderColor = 'var(--danger)';
+            } else {
+                error.style.display = 'none';
+                input.style.borderColor = '';
+            }
+            checkBasicInfoForm();
+        }
+
+        function checkBasicInfoForm() {
+            const errors = document.querySelectorAll('#basicInfoModal [id^="error-"][style*="display: block"]');
+            const nextBtn = document.getElementById('btn-save-basic');
+            if (errors.length > 0) {
+                nextBtn.style.opacity = '0.5';
+                nextBtn.style.pointerEvents = 'none';
+            } else {
+                nextBtn.style.opacity = '1';
+                nextBtn.style.pointerEvents = 'auto';
+            }
+        }
+
+        function saveBasicInfo() {
+            const toast = document.getElementById('toast-success');
+            toast.style.visibility = 'visible';
+            toast.style.opacity = '1';
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => { toast.style.visibility = 'hidden'; closeBasicInfo(); }, 300);
+            }, 1000);
+        }
+
+        // Manager Info Form Logic
+        function openMgrInfo() {
+            document.getElementById('mgrInfoModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+            setTimeout(() => {
+                document.querySelector('#mgrInfoModal .modal-sheet').scrollTop = 0;
+            }, 10);
+        }
+
+        function closeMgrInfo() {
+            document.getElementById('mgrInfoModal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function validateEditOfficeName() {
+            const input = document.getElementById('edit-office-name');
+            const error = document.getElementById('error-edit-office-name');
+            if (input.value.length > 50) {
+                error.innerText = t('mp_js_err_50_chars');
+                error.style.display = 'block';
+                input.style.borderColor = 'var(--danger)';
+            } else {
+                error.style.display = 'none';
+                input.style.borderColor = '';
+            }
+            checkMgrInfoForm();
+        }
+
+        function validateEditManagerName(id, errorId) {
+            const input = document.getElementById(id);
+            const error = document.getElementById(errorId);
+            if (input.value.length > 10) {
+                error.innerText = t('mp_js_err_10_chars');
+                error.style.display = 'block';
+                input.style.borderColor = 'var(--danger)';
+            } else {
+                error.style.display = 'none';
+                input.style.borderColor = '';
+            }
+            checkMgrInfoForm();
+        }
+
+        function validateEditMgrPhone() {
+            const input = document.getElementById('edit-mgr-tel-input');
+            const error = document.getElementById('error-edit-mgr-tel');
+            if (input.value.includes('-')) {
+                input.value = input.value.replace(/-/g, '');
+            }
+            const val = input.value;
+            if (val.length > 11) {
+                error.innerText = t('mp_js_err_11_nums');
+                error.style.display = 'block';
+                input.style.borderColor = 'var(--danger)';
+            } else if (val.length > 0 && !/^\d+$/.test(val)) {
+                error.innerText = t('mp_js_err_nums_only');
+                error.style.display = 'block';
+                input.style.borderColor = 'var(--danger)';
+            } else {
+                error.style.display = 'none';
+                input.style.borderColor = '';
+            }
+            checkMgrInfoForm();
+        }
+
+        function validateEditMgrEmail() {
+            const input = document.getElementById('edit-mgr-email-input');
+            const error = document.getElementById('error-edit-mgr-email');
+            const val = input.value;
+            if (val.length > 0 && !val.includes('@')) {
+                error.innerText = t('mp_js_err_email');
+                error.style.display = 'block';
+                input.style.borderColor = 'var(--danger)';
+            } else {
+                error.style.display = 'none';
+                input.style.borderColor = '';
+            }
+            checkMgrInfoForm();
+        }
+
+        function checkMgrInfoForm() {
+            const errors = document.querySelectorAll('#mgrInfoModal [id^="error-"][style*="display: block"]');
+            const nextBtn = document.getElementById('btn-save-mgr');
+            if (errors.length > 0) {
+                nextBtn.style.opacity = '0.5';
+                nextBtn.style.pointerEvents = 'none';
+            } else {
+                nextBtn.style.opacity = '1';
+                nextBtn.style.pointerEvents = 'auto';
+            }
+        }
+
+        function saveMgrInfo() {
+            const toast = document.getElementById('toast-success-mgr');
+            toast.style.visibility = 'visible';
+            toast.style.opacity = '1';
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => { toast.style.visibility = 'hidden'; closeMgrInfo(); }, 300);
+            }, 1000);
+        }
+    </script>
+    <script src="app.js"></script>
+</body>
+</html>

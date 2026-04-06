@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title data-i18n="up_title_short">MYアルバム限定アップロード - MYアルバム</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="lang.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --nav-height: 80px;
+            --danger-color: #FF3B30;
+            --warning-color: #FF9500;
+            --search-bg: #F2F2F7;
+        }
+
+        body { padding-bottom: calc(var(--nav-height) + 20px); -webkit-tap-highlight-color: transparent; background: #F8F8F8;}
+        .app-container { max-width: 430px; margin: 0 auto; background: #F8F8F8; min-height: 100vh; position: relative;}
+
+        /* Header */
+        .up-header { box-shadow: 0 2px 12px rgba(0,0,0,0.05); border-bottom: none; background: rgba(255,255,255,0.95); position: sticky; top: 0; z-index: 50;}
+
+        /* Intro & Warning */
+        .intro-area { padding: 16px; }
+        .intro-title { font-size: 18px; font-weight: 900; margin-bottom: 12px; color: var(--text-main); text-align: center; }
+        .intro-list { list-style: none; margin-bottom: 16px; background: white; padding: 16px; border-radius: 12px; border: 1px solid var(--border-color); }
+        .intro-list li { font-size: 12px; color: var(--text-sub); font-weight: 600; line-height: 1.5; margin-bottom: 8px; display: flex; gap: 8px; align-items: flex-start;}
+        .intro-list li::before { content: "•"; color: var(--primary-color); font-weight: 900; }
+        .intro-list li:last-child { margin-bottom: 0; }
+
+        /* Actions */
+        .btn-large { padding: 16px; font-size: 15px; border-radius: 16px; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-weight: 800; border: none; cursor: pointer; transition: 0.2s; text-align: center; }
+        .btn-primary { background: var(--primary-color); color: white; box-shadow: 0 4px 16px rgba(255,107,0,0.2); }
+        .btn-primary .btn-subtext { font-size: 11px; font-weight: 700; opacity: 0.8; }
+
+        /* Overall Progress */
+        .overall-prog { margin: 16px; display: none; background: white; padding: 16px; border-radius: 16px; border: 1px solid var(--border-color); }
+        .op-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px; }
+        .op-title { font-size: 14px; font-weight: 900; }
+        .op-counts { font-size: 12px; font-weight: 800; color: var(--primary-color); }
+        .op-bar-bg { width: 100%; height: 6px; background: #EAE8F2; border-radius: 3px; overflow: hidden; }
+        .op-bar-fill { height: 100%; background: var(--primary-color); width: 0%; border-radius: 3px; transition: width 0.3s ease; }
+
+        .input-field { width: 100%; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; font-size: 14px; font-weight: 800; background: #FFF; outline: none; transition: border-color 0.2s; }
+        .input-field:focus { border-color: var(--primary-color); }
+
+        /* Media Modal */
+        .media-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 200; display: none; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); opacity: 0; transition: opacity 0.3s; }
+        .media-modal.active { display: flex; opacity: 1; }
+        .modal-body { width: 100%; max-width: 430px; position: relative; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .modal-img-wrap { width: 100%; aspect-ratio: 1/1; position: relative; border-radius: 16px; overflow: hidden; background: #000; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+        .modal-img-wrap img { width: 100%; height: 100%; object-fit: contain; }
+        .modal-play-btn { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.2); }
+        .play-icon { width: 64px; height: 64px; background: rgba(255,255,255,0.9); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; color: var(--primary-color); padding-left: 4px; }
+        
+        .modal-info { width: 100%; margin-top: 24px; color: white; text-align: center; }
+        .modal-platform { font-size: 14px; font-weight: 900; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .modal-platform img { width: 24px; height: 24px; border-radius: 6px; }
+        .modal-date { font-size: 12px; font-weight: 600; opacity: 0.7; }
+        .modal-type { font-size: 11px; font-weight: 900; margin-top: 12px; display: inline-block; background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 100px; }
+        
+        .modal-close { position: absolute; top: safe-area-inset-top; top: 16px; right: 16px; font-size: 32px; color: white; cursor: pointer; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; z-index: 210; }
+
+        /* Upload Queue (Selected View) */
+        .file-list { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+        .file-card { background: white; border-radius: 12px; border: 1px solid var(--border-color); padding: 12px; display: flex; gap: 12px; align-items: center; }
+        .fc-thumb-mini { width: 44px; height: 44px; border-radius: 6px; background: #EAE8F2; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+
+        .cta-bottom { position: fixed; bottom: calc(var(--nav-height) + 16px); left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; padding: 0 16px; z-index: 90; display: none;}
+        .blur-bg { padding: 12px; background: rgba(255,255,255,0.8); backdrop-filter: blur(12px); border-radius: 20px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); border: 1px solid rgba(255,255,255,0.5);}
+
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        
+        <header class="app-header up-header">
+            <a href="dashboard.html" class="back-btn">‹</a>
+            <div class="app-header-title" id="pageTitle" data-i18n="up_title">MYアルバム限定アップロード</div>
+            <div style="width: 32px;"></div>
+        </header>
+
+        <main style="padding-bottom: 40px;">
+            <!-- Initial View -->
+            <div id="view-init">
+                <div class="intro-area">
+                    <h2 class="intro-title" data-i18n="up_title">MYアルバム限定アップロード</h2>
+                    
+                    <!-- Destination Selection -->
+                    <div style="background: white; border: 1px solid var(--border-color); border-radius: 16px; padding: 20px; margin-bottom: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+                        <div style="position: relative;">
+                            <label style="display:block; font-size: 11px; font-weight: 800; color: var(--text-sub); margin-bottom: 8px; letter-spacing: 0.05em;"><span data-i18n="up_dest">追加先アーカイブ</span> <span style="color:var(--danger-color); font-weight:bold;" data-i18n="up_mandatory">※必須</span></label>
+                            <div style="position: relative;">
+                                <select id="archive-select" class="input-field" style="appearance: none; padding-right: 36px;" onchange="updateArchiveToggle()">
+                                    <option value="東京ライブ 神ファンサシーンまとめ(共有)" selected data-i18n="up_opt1">東京ライブ 神ファンサシーンまとめ(共有)</option>
+                                    <option value="夏服生写真メイキング映像" data-i18n="up_opt2">夏服生写真メイキング映像</option>
+                                    <option value="NEW" style="color:var(--primary-color); font-weight:900;" data-i18n="up_opt_new">＋ 新規アーカイブを作成する</option>
+                                </select>
+                                <div style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; color: var(--text-sub); display: flex;">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
+                                </div>
+                            </div>
+                            <div id="new-archive-input-container" style="display:none; margin-top: 16px; padding-top: 12px; border-top: 1px dashed var(--border-color);">
+                                <label style="display:block; font-size: 11px; font-weight: 800; color: var(--text-sub); margin-bottom: 8px; letter-spacing: 0.05em;"><span data-i18n="up_new_arch_name">新しいアーカイブ名を入力</span> <span style="color:var(--danger-color); font-weight:bold;" data-i18n="up_mandatory">※必須</span></label>
+                                <input type="text" id="new-archive-name" class="input-field" placeholder="新しいアーカイブ名を入力" data-i18n="up_new_arch_name">
+                                <div style="font-size: 10px; color: var(--text-sub); margin-top: 6px; font-weight: 600;" data-i18n="up_new_arch_limit">半角全角文字 20文字以内</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <ul class="intro-list">
+                        <li data-i18n="up_note_1">写真・動画を一度に20件までアップロードできます。</li>
+                        <li data-i18n="up_note_2">アップロード中は、この画面を閉じずにお待ちください。</li>
+                        <li data-i18n="up_note_3">安全にアップロードするため、通信が安定した場所でご利用ください。</li>
+                    </ul>
+
+                    <div style="margin-top: 24px;">
+                        <button class="btn-large btn-primary" onclick="handleSelectFiles()">
+                            <span style="font-size: 24px; margin-bottom: 2px;">📁</span>
+                            <span data-i18n="up_btn_select">写真・動画を選ぶ</span>
+                            <span class="btn-subtext" data-i18n="up_btn_sub">※ 1回につき最大20件まで</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Uploading / Results View -->
+            <div id="view-selected" style="display:none;">
+                <div style="padding: 16px 16px 0;">
+                    <span style="font-size:11px; font-weight:800; color:var(--text-sub);" data-i18n="up_sel_dest">追加先アーカイブ:</span>
+                    <div id="selected-archive-display" style="font-size:14px; font-weight:900; color:var(--text-main); margin-top:4px; padding: 10px 14px; background: white; border-radius: 12px; border: 1px solid var(--border-color); box-shadow: 0 2px 8px rgba(0,0,0,0.02);"></div>
+                </div>
+
+                <div class="overall-prog" id="overall-prog" style="display:block;">
+                    <div class="op-header">
+                        <div class="op-title" id="op-status-text" data-i18n="up_prep">アップロード準備完了</div>
+                        <div class="op-counts" id="op-counts" data-i18n="up_counts">0 / 3件完了</div>
+                    </div>
+                    <div class="op-bar-bg">
+                        <div class="op-bar-fill" id="op-bar"></div>
+                    </div>
+                </div>
+
+                <!-- Action CTA -->
+                <div class="cta-bottom" id="cta-start" style="display:block;">
+                    <div class="blur-bg">
+                        <button id="cta-btn" class="btn-large btn-primary" onclick="startUpload()" style="flex-direction: row; gap: 8px;" data-i18n="up_btn_start">アップロード開始</button>
+                    </div>
+                </div>
+
+                <!-- Complete / Error Box -->
+                <div id="status-box" style="margin: 0 16px 20px 16px;"></div>
+
+                <div class="file-list" id="file-queue"></div>
+            </div>
+        </main>
+
+        <nav class="bottom-nav">
+            <a href="dashboard.html" class="nav-item">
+                <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+                <span data-i18n="nav_home">ホーム</span>
+            </a>
+            <a href="album_edit.html" class="nav-item active">
+                <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                <span data-i18n="nav_post">MY投稿</span>
+            </a>
+            <a href="review.html" class="nav-item">
+                <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                <span data-i18n="nav_review">レビュー</span>
+            </a>
+            <a href="invite.html" class="nav-item">
+                <svg viewBox="0 0 24 24"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                <span data-i18n="nav_invite">招待</span>
+            </a>
+            <a href="mypage.html" class="nav-item">
+                <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                <span data-i18n="nav_mypage">マイページ</span>
+            </a>
+        </nav>
+    </div>
+
+    <!-- Media Modal -->
+    <div class="media-modal" id="mediaModal" onclick="closeModal()">
+        <div class="modal-close">&times;</div>
+        <div class="modal-body" onclick="event.stopPropagation()">
+            <div class="modal-img-wrap">
+                <img id="modalImg" src="" alt="Expanded View">
+                <div id="modalPlayBtn" class="modal-play-btn" style="display:none;">
+                    <div class="play-icon">▶</div>
+                </div>
+            </div>
+            <div class="modal-info">
+                <div class="modal-platform" id="modalPlatform">
+                    <img id="modalPlatformIcon" src="" alt="">
+                    <span id="modalPlatformName">---</span>
+                </div>
+                <div class="modal-date" id="modalDate">---</div>
+                <div class="modal-type" id="modalType">---</div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const MOCK_QUEUE = [
+            { id: 1, name: "IMG_8231.jpg", size: "3.2 MB", progress: 0, status: "wait", error: false },
+            { id: 2, name: "IMG_8232.jpg", size: "4.1 MB", progress: 0, status: "wait", error: false },
+            { id: 3, name: "DAOI_DANCE.mp4", size: "650 MB", progress: 0, status: "wait", error: false }
+        ];
+
+        let uploadInterval = null;
+        let hasErrored = false;
+
+        function handleSelectFiles() {
+            const select = document.getElementById('archive-select');
+            let archiveName = select.options[select.selectedIndex].text;
+            if (select.value === 'NEW') {
+                archiveName = document.getElementById('new-archive-name').value || t('up_new_arch_unset');
+            }
+            document.getElementById('selected-archive-display').innerText = archiveName;
+
+            document.getElementById('view-init').style.display = 'none';
+            document.getElementById('view-selected').style.display = 'block';
+            
+            document.getElementById('cta-start').style.display = 'block';
+            const btn = document.getElementById('cta-btn');
+            btn.innerText = t('up_btn_start');
+            btn.className = 'btn-large btn-primary';
+            btn.setAttribute('onclick', 'startUpload()');
+            
+            hasErrored = false;
+            MOCK_QUEUE.forEach(f => { f.progress = 0; f.status = 'wait'; });
+            renderQueue();
+        }
+
+        function renderQueue() {
+            const list = document.getElementById('file-queue');
+            list.innerHTML = '';
+            MOCK_QUEUE.forEach((f) => {
+                let statusText = t('up_status_wait');
+                let statusColor = 'var(--primary-color)';
+                let bgStyle = '';
+                
+                if(f.status === 'uploading') { statusText = f.progress + '%'; }
+                if(f.status === 'done') { statusText = t('up_status_done'); statusColor = '#34C759'; }
+                if(f.status === 'error') { 
+                    statusText = t('up_status_err'); 
+                    statusColor = 'var(--danger-color)'; 
+                    bgStyle = 'border-color:var(--danger-color); background:#FFF0F0;';
+                }
+
+                list.innerHTML += `
+                    <div class="file-card" id="file-card-${f.id}" style="${bgStyle}">
+                        <div class="fc-thumb-mini">${f.name.endsWith('mp4') ? '🎥' : '🖼️'}</div>
+                        <div style="flex:1;">
+                            <div style="font-size:13px; font-weight:900; color:${f.status === 'error' ? 'var(--danger-color)' : 'inherit'}">${f.name}</div>
+                            <div style="font-size:11px; color:var(--text-sub);">${f.size}</div>
+                        </div>
+                        <div style="font-size:12px; font-weight:900; color:${statusColor};" id="prog-${f.id}">${statusText}</div>
+                    </div>
+                `;
+            });
+        }
+
+        function startUpload() {
+            document.getElementById('cta-start').style.display = 'none';
+            document.getElementById('op-status-text').innerText = t('up_status_up');
+            document.getElementById('op-status-text').style.color = 'var(--text-main)';
+            document.getElementById('op-bar').style.backgroundColor = 'var(--primary-color)';
+            
+            MOCK_QUEUE.forEach(f => {
+                if(f.status === 'wait' || f.status === 'error') {
+                    f.status = 'uploading';
+                }
+            });
+            renderQueue();
+
+            let tick = 0;
+            uploadInterval = setInterval(() => {
+                tick++;
+                let totalProgress = 0;
+
+                MOCK_QUEUE.forEach((f, idx) => {
+                    if (f.status === 'uploading') {
+                        // Mock Connection interrupt on large video
+                        if (idx === 2 && !hasErrored && tick > 15 && f.progress > 40) {
+                            f.status = 'error';
+                            hasErrored = true;
+                            clearInterval(uploadInterval);
+                            showErrorState();
+                            return;
+                        }
+                        
+                        let speed = f.name.endsWith('mp4') ? 5 : 20; // slower for video
+                        f.progress += Math.floor(Math.random() * speed + 2);
+                        if(f.progress >= 100) {
+                            f.progress = 100;
+                            f.status = 'done';
+                        }
+                    }
+                    if(f.status === 'done') totalProgress += 100;
+                    else totalProgress += f.progress;
+                });
+
+                if (hasErrored) return;
+
+                let overallPct = Math.floor(totalProgress / MOCK_QUEUE.length);
+                document.getElementById('op-bar').style.width = overallPct + '%';
+                
+                const doneCount = MOCK_QUEUE.filter(f => f.status === 'done').length;
+                document.getElementById('op-counts').innerText = `${doneCount} / ${MOCK_QUEUE.length}${t('up_counts_done')}`;
+
+                renderQueue();
+
+                if(doneCount === MOCK_QUEUE.length) {
+                    clearInterval(uploadInterval);
+                    showComplete();
+                }
+            }, 400);
+        }
+
+        function showErrorState() {
+            renderQueue();
+            const btn = document.getElementById('cta-btn');
+            btn.innerText = t('up_status_err_btn');
+            btn.style.background = 'var(--danger-color)';
+            btn.style.boxShadow = '0 4px 16px rgba(255,59,48,0.3)';
+            document.getElementById('cta-start').style.display = 'block';
+            
+            document.getElementById('op-status-text').innerText = t('up_status_err_txt');
+            document.getElementById('op-status-text').style.color = 'var(--danger-color)';
+            document.getElementById('op-bar').style.backgroundColor = 'var(--danger-color)';
+        }
+
+        function showComplete() {
+            document.getElementById('cta-start').style.display = 'none';
+            document.getElementById('op-status-text').innerText = t('up_status_success');
+            document.getElementById('op-status-text').style.color = '#34C759';
+            document.getElementById('op-bar').style.backgroundColor = '#34C759';
+            document.getElementById('status-box').innerHTML = `
+                <div style="background:white; padding:24px; border-radius:16px; text-align:center; border:1px solid var(--border-color); box-shadow:0 4px 12px rgba(0,0,0,0.05);">
+                    <div style="font-size:40px; margin-bottom:12px;">✅</div>
+                    <div style="font-weight:900; font-size:16px; margin-bottom:8px;">${t('up_success_msg1')}</div>
+                    <p style="font-size:12px; color:var(--text-sub); margin-bottom:24px; line-height:1.5;">${t('up_success_msg2')}</p>
+                    <button class="btn-large btn-primary" onclick="location.href='dashboard.html'" style="padding:16px; background:#1a202c; box-shadow:none;">${t('up_btn_back_db')}</button>
+                </div>
+            `;
+        }
+
+        // Modal Logic
+        function openMediaModal(url, platform, date, type) {
+            const modal = document.getElementById('mediaModal');
+            const img = document.getElementById('modalImg');
+            const platName = document.getElementById('modalPlatformName');
+            const platIcon = document.getElementById('modalPlatformIcon');
+            const mDate = document.getElementById('modalDate');
+            const mType = document.getElementById('modalType');
+            const playBtn = document.getElementById('modalPlayBtn');
+
+            img.src = url;
+            platName.innerText = platform;
+            mDate.innerText = date;
+            mType.innerText = type;
+
+            if (platform === 'Instagram') platIcon.src = 'images/icon/Instagram.png';
+            else if (platform === 'X') platIcon.src = 'images/icon/X.png';
+            else platIcon.src = 'images/Myalbumlogo_small.png';
+
+            playBtn.style.display = type.includes('動画') ? 'flex' : 'none';
+
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('mediaModal');
+            modal.classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+
+        function updateArchiveToggle() {
+            const select = document.getElementById('archive-select');
+            const container = document.getElementById('new-archive-input-container');
+            if (select.value === 'NEW') {
+                container.style.display = 'block';
+            } else {
+                container.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

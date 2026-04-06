@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MY限定コンテンツ投稿 - MYアルバム アーティスト</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .upload-hero {
+            background: white; border-radius: 24px; padding: 40px 24px; text-align: center;
+            border: 2px dashed var(--border-color); cursor: pointer; transition: 0.3s;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+        }
+        .upload-hero:hover { border-color: var(--primary-color); background: var(--primary-light); }
+        .upload-plus { font-size: 48px; color: var(--primary-color); }
+        
+        .form-section { background: white; border-radius: 20px; padding: 20px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <button class="btn-ghost" onclick="history.back()" style="font-size: 20px;">←</button>
+            <h1 class="header-title">MY限定コンテンツ投稿</h1>
+            <button class="btn btn-primary btn-sm" style="width: auto; padding: 8px 20px;" onclick="alert('投稿完了！キュレーターへ通知されました。'); location.href='dashboard.html'">投稿</button>
+        </header>
+
+        <main class="p-4 anim-fade" style="padding-bottom: 110px;">
+            <div class="upload-hero" onclick="document.getElementById('file-in').click()">
+                <div class="upload-plus">+</div>
+                <h3>メディアを追加</h3>
+                <p class="text-xs text-sub">画像または動画を選択してください</p>
+                <input type="file" id="file-in" style="display:none;" onchange="alert('ファイルが選択されました')">
+            </div>
+
+            <div class="form-section">
+                <div class="input-group mb-4">
+                    <label class="label">キャプション</label>
+                    <textarea class="input" rows="4" placeholder="ファンへのメッセージを入力..."></textarea>
+                </div>
+
+                <div class="flex justify-between items-center py-2" style="border-top:1px solid #f2f2f7;">
+                    <div>
+                        <div class="text-xs font-black">キュレーターへ通知</div>
+                        <div class="text-xs text-sub">投稿時にアプリ通知を送信</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <section class="card mt-6" style="background: var(--primary-light); border: none;">
+                <p class="text-xs font-black" style="color:var(--primary-color);">💡 投稿のヒント</p>
+                <p class="text-xs mt-2" style="line-height: 1.5; color: #CC5500;">ここで投稿されたコンテンツは、キュレーターが二次創作素材として利用できるようになります。ライブの裏側やオフショットを積極的に共有しましょう！</p>
+            </section>
+        </main>
+
+        <nav class="bottom-nav">
+            <a href="dashboard.html" class="nav-item">
+                <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+                <span>ホーム</span>
+            </a>
+            <a href="album_edit.html" class="nav-item active">
+                <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                <span>MY投稿</span>
+            </a>
+            <a href="review.html" class="nav-item">
+                <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                <span>レビュー</span>
+            </a>
+            <a href="invite.html" class="nav-item">
+                <svg viewBox="0 0 24 24"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                <span>招待</span>
+            </a>
+            <a href="mypage.html" class="nav-item">
+                <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                <span>マイページ</span>
+            </a>
+        </nav>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

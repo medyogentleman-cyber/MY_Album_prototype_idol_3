@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SNS連携設定 - MYアルバム アーティスト</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .sns-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: white;
+            padding: 16px;
+            border-radius: var(--radius-sm);
+            margin-bottom: 12px;
+            border: 1px solid var(--border-color);
+        }
+        .sns-logo {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            color: white;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <a href="dashboard.html" class="btn-ghost" style="font-size: 24px; text-decoration: none;">←</a>
+            <h1 class="header-title">外部SNS連携設定</h1>
+            <div style="width: 40px;"></div>
+        </header>
+
+        <main class="p-4 animate-fade" style="padding-bottom: 110px;">
+            <p class="text-sub mb-6">
+                外部SNSでの投稿を検知して、自動的にキュレーターアプリへ通知を送るための設定です。
+            </p>
+
+            <section class="mb-8">
+                <h3 class="mb-4">連携済みのアカウント</h3>
+                
+                <div class="sns-card">
+                    <div class="flex items-center gap-3">
+                        <div class="sns-logo is-img"><img src="images/icon/X.png" alt="X"></div>
+                        <div>
+                            <div class="text-xs font-bold">@Aoi_Official</div>
+                            <div class="text-xs text-sub">X (Twitter)</div>
+                        </div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" checked onchange="toggleSNS('X', this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="sns-card">
+                    <div class="flex items-center gap-3">
+                        <div class="sns-logo is-img"><img src="images/icon/Instagram.png" alt="Instagram"></div>
+                        <div>
+                            <div class="text-xs font-bold">aoi_photo_life</div>
+                            <div class="text-xs text-sub">Instagram</div>
+                        </div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" checked onchange="toggleSNS('Instagram', this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </section>
+
+            <section>
+                <h3 class="mb-4">他のSNSを連携する</h3>
+                
+                <div class="sns-card" style="opacity: 0.7;">
+                    <div class="flex items-center gap-3">
+                        <div class="sns-logo is-img"><img src="images/icon/Youtube.png" alt="YouTube"></div>
+                        <div class="text-xs font-bold">YouTube</div>
+                    </div>
+                    <button class="btn btn-outline btn-sm" style="width: auto;" onclick="alert('連携画面へ遷移します（シミュレーション）')">連携する</button>
+                </div>
+
+                <div class="sns-card" style="opacity: 0.7;">
+                    <div class="flex items-center gap-3">
+                        <div class="sns-logo is-img"><img src="images/icon/Tictok.png" alt="TikTok"></div>
+                        <div class="text-xs font-bold">TikTok</div>
+                    </div>
+                    <button class="btn btn-outline btn-sm" style="width: auto;" onclick="alert('連携画面へ遷移します（シミュレーション）')">連携する</button>
+                </div>
+
+                <div class="sns-card" style="opacity: 0.7;">
+                    <div class="flex items-center gap-3">
+                        <div class="sns-logo is-img"><img src="images/icon/showroom.png" alt="SHOWROOM"></div>
+                        <div class="text-xs font-bold">SHOWROOM</div>
+                    </div>
+                    <button class="btn btn-outline btn-sm" style="width: auto;" onclick="alert('連携画面へ遷移します（シミュレーション）')">連携する</button>
+                </div>
+            </section>
+
+            <section class="card mt-8" style="background: var(--primary-light);">
+                <h4 class="text-xs font-bold mb-2">自動通知の仕組み</h4>
+                <p class="text-xs text-sub" style="line-height: 1.5;">
+                    連携したSNSで新しい投稿を行うと、MYアルバムのサーバーが自動的に検知し、キュレーターのデバイスへ「あおいちゃんが新しい投稿をしました！」という通知を送ります。
+                </p>
+            </section>
+        </main>
+        <nav class="bottom-nav">
+            <a href="dashboard.html" class="nav-item">
+                <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+                <span>ホーム</span>
+            </a>
+            <a href="album_edit.html" class="nav-item">
+                <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                <span>MY投稿</span>
+            </a>
+            <a href="review.html" class="nav-item">
+                <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                <span>レビュー</span>
+            </a>
+            <a href="invite.html" class="nav-item">
+                <svg viewBox="0 0 24 24"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                <span>招待</span>
+            </a>
+            <a href="mypage.html" class="nav-item active">
+                <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                <span>マイページ</span>
+            </a>
+        </nav>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

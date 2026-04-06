@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>公認キュレーター管理 - アイドル/アーティスト用</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .profile-header {
+            display: flex; flex-direction: column; align-items: center;
+            padding: 24px 16px; background-color: var(--primary-color); color: white;
+        }
+        .avatar {
+            width: 80px; height: 80px; border-radius: 50%;
+            background-color: #FFF; object-fit: cover;
+            margin-bottom: 12px; border: 2px solid white;
+        }
+        .user-name { font-size: 18px; font-weight: 800; text-align: center; margin-bottom: 4px; }
+        
+        .search-tabs { display: flex; background: white; border-bottom: 1px solid var(--border-color); }
+        .s-tab { flex: 1; text-align: center; padding: 12px 0; font-size: 14px; font-weight: 600; color: var(--text-sub); border-bottom: 2px solid transparent; cursor: pointer; transition: 0.2s; }
+        .s-tab.active { color: var(--primary-color); border-bottom-color: var(--primary-color); }
+        .tab-content { padding: 16px; }
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; }
+        
+        .qr-box {
+            background: white; border-radius: 12px; padding: 24px; text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid var(--border-color);
+            margin-bottom: 24px;
+        }
+        .qr-placeholder {
+            width: 180px; height: 180px; margin: 0 auto 16px;
+            background: repeating-conic-gradient(#000 0% 25%, #FFF 0% 50%) 50% / 20px 20px;
+            border: 8px solid white; outline: 1px solid #E5E5EA; position: relative;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .qr-placeholder::after {
+            content: 'QR'; background: white; padding: 8px; font-weight: bold; font-size: 24px;
+        }
+        
+        .share-grid {
+            display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-top: 16px;
+        }
+        .share-btn {
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+            color: var(--text-main); font-size: 10px; cursor: pointer; border: none; background: transparent;
+        }
+        .share-icon {
+            width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 20px; color: white;
+        }
+        
+        .c-status-card {
+            background: white; border-radius: 12px; padding: 16px; margin-bottom: 12px;
+            border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between;
+        }
+        .status-badge {
+            padding: 4px 8px; border-radius: 12px; font-size: 10px; font-weight: bold;
+        }
+        .status-active { background: #E8F5E9; color: #4CAF50; border: 1px solid #4CAF50; }
+        .status-pending { background: #FFF3E0; color: #FF9800; border: 1px solid #FF9800; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header" style="background:var(--primary-color); color:white; border:none;">
+            <a href="../MY Album_prototype_1/index.html" style="text-decoration:none; color:white; font-size: 24px; font-weight:bold; width: 24px;">←</a>
+            <div class="app-header-title">公認管理 (アーティスト用)</div>
+            <div style="width: 24px;"></div>
+        </header>
+
+        <header class="profile-header">
+            <img src="../MY Album_prototype_1/images/avatar.png" class="avatar" alt="Artist Avatar">
+            <h1 class="user-name">あおいちゃん 公式</h1>
+            <div style="font-size: 13px; opacity: 0.9;">公認キュレーター発行・管理画面</div>
+        </header>
+
+        <!-- Tabs -->
+        <div class="search-tabs">
+            <div class="s-tab active" onclick="switchTab('invite', event)">招待発行</div>
+            <div class="s-tab" onclick="switchTab('status', event)">キュレーターステータス</div>
+        </div>
+
+        <div class="tab-content">
+            <!-- Invite Tab -->
+            <div class="tab-pane active" id="tab-invite">
+                <p class="text-sub text-xs mb-4">対面で会った優秀なキュレーターに、あなたから公認リンクとQRコードを直接渡すことができます。</p>
+                
+                <div class="qr-box">
+                    <div style="font-size:14px; font-weight:700; margin-bottom:16px;">公認キュレーター登録用QRコード</div>
+                    <div class="qr-placeholder"></div>
+                    <button class="btn btn-outline" style="width:100%; border-radius:8px; margin-bottom:8px;">🔗 パスワード付きリンクをコピー</button>
+                    
+                    <div style="margin-top: 24px; text-align: left;">
+                        <span class="text-xs" style="color:var(--text-sub); font-weight:bold;">シェアする</span>
+                        <div class="share-grid">
+                            <button class="share-btn" onclick="alert('LINEでシェアします')">
+                                <div class="share-icon" style="background: #06C755;">L</div>
+                                LINE
+                            </button>
+                            <button class="share-btn" onclick="alert('Messengerでシェアします')">
+                                <div class="share-icon" style="background: #0084FF;">M</div>
+                                Messenger
+                            </button>
+                            <button class="share-btn" onclick="alert('Instagram DMでシェアします')">
+                                <div class="share-icon" style="background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);">IG</div>
+                                Instagram
+                            </button>
+                            <button class="share-btn" onclick="alert('X DMでシェアします')">
+                                <div class="share-icon" style="background: #000;">𝕏</div>
+                                X DM
+                            </button>
+                            <button class="share-btn" onclick="alert('SMSでシェアします')">
+                                <div class="share-icon" style="background: #34C759;">💬</div>
+                                SMS
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status Tab -->
+            <div class="tab-pane" id="tab-status">
+                <p class="text-sub text-xs mb-4">招待履歴と現在稼働している公認キュレーターの活動状況です。</p>
+                
+                <!-- Curator 1 -->
+                <div class="c-status-card">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <img src="../MY Album_prototype_1/images/avatar.png" style="width:40px; height:40px; border-radius:50%; object-fit:cover;">
+                        <div>
+                            <div style="font-weight:700; font-size:14px; margin-bottom:4px;">あるあるあるね</div>
+                            <div style="font-size:10px; color:var(--text-sub);">招待日: 2026/2/15<br>発行アルバム: 12</div>
+                        </div>
+                    </div>
+                    <div class="status-badge status-active">稼働中</div>
+                </div>
+                
+                <!-- Curator 2 -->
+                <div class="c-status-card">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <img src="../MY Album_prototype_1/images/avatar.png" style="width:40px; height:40px; border-radius:50%; object-fit:cover;">
+                        <div>
+                            <div style="font-weight:700; font-size:14px; margin-bottom:4px;">ゴイゴイスー</div>
+                            <div style="font-size:10px; color:var(--text-sub);">招待日: 2026/2/10<br>発行アルバム: 5</div>
+                        </div>
+                    </div>
+                    <div class="status-badge status-active">稼働中</div>
+                </div>
+                
+                <!-- Curator 3 -->
+                <div class="c-status-card">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <div style="width:40px; height:40px; border-radius:50%; background:#E5E5EA; display:flex; align-items:center; justify-content:center; font-size:16px;">👤</div>
+                        <div>
+                            <div style="font-weight:700; font-size:14px; margin-bottom:4px;">新人 編集部</div>
+                            <div style="font-size:10px; color:var(--text-sub);">招待日: 2026/3/18<br>発行アルバム: 0</div>
+                        </div>
+                    </div>
+                    <div class="status-badge status-pending">招待済・未稼働</div>
+                </div>
+
+            </div>
+        <nav class="bottom-nav">
+            <a href="dashboard.html" class="nav-item">
+                <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+                <span>ホーム</span>
+            </a>
+            <a href="album_edit.html" class="nav-item">
+                <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                <span>MY投稿</span>
+            </a>
+            <a href="review.html" class="nav-item">
+                <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                <span>レビュー</span>
+            </a>
+            <a href="invite.html" class="nav-item">
+                <svg viewBox="0 0 24 24"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                <span>招待</span>
+            </a>
+            <a href="mypage.html" class="nav-item">
+                <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                <span>マイページ</span>
+            </a>
+        </nav>
+    </div>
+
+    <!-- External scripts -->
+    <script src="app.js"></script>
+    <script>
+        function switchTab(tabId, ev) {
+            document.querySelectorAll('.s-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+            
+            if (ev) ev.currentTarget.classList.add('active');
+            document.getElementById('tab-' + tabId).classList.add('active');
+        }
+    </script>
+</body>
+</html>
+

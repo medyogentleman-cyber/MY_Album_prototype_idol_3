@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title data-i18n="rev_title">コンテンツレビュー - MYアルバム アーティスト</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="lang.js"></script>
+    <style>
+        .official-btn-container { margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(0,0,0,0.05); display: none; }
+        .official-btn-container.active { display: block; }
+        .btn-official { 
+            width: 100%; 
+            padding: 8px; 
+            border-radius: 12px; 
+            background: linear-gradient(135deg, var(--success), #28a745); 
+            color: white; 
+            font-size: 11px; 
+            font-weight: 900; 
+            border: none; 
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.2);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-official:active { transform: scale(0.98); opacity: 0.9; }
+        .btn-official.posted { background: #E5E7EB; color: #9CA3AF; box-shadow: none; cursor: default; }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 4px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <button class="btn-ghost" onclick="history.back()" style="font-size: 20px;">←</button>
+            <h1 class="header-title" data-i18n="rev_title">コンテンツレビュー</h1>
+            <div style="width: 32px;"></div>
+        </header>
+
+        <main class="p-4 anim-fade" style="padding-bottom: 110px;">
+            <div class="tab-container" style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 16px; scrollbar-width: none; -ms-overflow-style: none;">
+                <style>.tab-container::-webkit-scrollbar { display: none; }</style>
+                <div class="tab-item active" onclick="switchTab('my-album-exclusive', this)" style="flex-shrink:0; padding:12px 16px;">
+                    <span style="display:flex; align-items:center; justify-content:center; gap:4px;">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12zM10 9h8v2h-8zm0 3h4v2h-4zm0-6h8v2h-8z"/></svg>
+                        <span data-i18n="rev_tab_exclusive">MYアルバム限定一覧</span>
+                    </span>
+                </div>
+                <div class="tab-item" onclick="switchTab('edit-review', this)" style="flex-shrink:0; padding:12px 16px;">
+                    <span style="display:flex; align-items:center; justify-content:center; gap:4px;">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                        <span data-i18n="rev_tab_approved">承認済</span>
+                    </span>
+                </div>
+                <div class="tab-item" onclick="switchTab('fan-original', this)" style="flex-shrink:0; padding:12px 16px;">
+                    <span style="display:flex; align-items:center; justify-content:center; gap:4px;">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+                        <span data-i18n="rev_tab_unapproved">未承認</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Tab 0: MYアルバム限定一覧 -->
+            <div id="my-album-exclusive" class="tab-content active">
+                <p class="text-xs text-sub mb-4" data-i18n="rev_desc_exclusive">あなたがアップロードしたMYアルバム限定コンテンツの一覧です。</p>
+                
+                <div class="archive-card-sm" onclick="location.href='view_tokyolive_list.html'" style="cursor:pointer;">
+                    <div class="flex gap-3">
+                        <img src="images/aoi_thumbnails/aoi_fan_meeting.png" class="ac-thumb-sm" style="border-radius: 8px; border: 1px solid rgba(0,0,0,0.05);">
+                        <div style="flex:1;">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <div class="text-xs font-black" style="line-height:1.4;" data-i18n="up_opt1">東京ライブ 神ファンサシーンまとめ(共有)</div>
+                                    <div class="text-xs text-sub mt-1"><span data-i18n="type_video">🎥 動画</span> 3件 / 1.2GB</div>
+                                </div>
+                                <div class="badge badge-god" style="font-size:10px; margin-left:8px;" data-i18n="rev_public">公開中</div>
+                            </div>
+                            <div class="text-xs text-sub mt-2" style="font-weight:600;"><span data-i18n="rev_last_update">最終更新: </span>2026/03/25 14:30</div>
+                            <div class="mt-2 text-right">
+                                <button class="btn btn-outline" style="padding: 4px 12px; font-size: 10px; border-radius: 6px; width:auto;" data-i18n="rev_content_manage">コンテンツ管理</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="archive-card-sm" onclick="location.href='view_summer_list.html'" style="cursor:pointer;">
+                    <div class="flex gap-3">
+                        <img src="images/aoi_thumbnails/aoi_instagram_post.png" class="ac-thumb-sm" style="border-radius: 8px; border: 1px solid rgba(0,0,0,0.05);">
+                        <div style="flex:1;">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <div class="text-xs font-black" style="line-height:1.4;" data-i18n="up_opt2">夏服生写真メイキング映像</div>
+                                    <div class="text-xs text-sub mt-1"><span data-i18n="type_image">📸 画像</span> 12件 / 45.1MB</div>
+                                </div>
+                                <div class="badge badge-god" style="font-size:10px; margin-left:8px;" data-i18n="rev_public">公開中</div>
+                            </div>
+                            <div class="text-xs text-sub mt-2" style="font-weight:600;"><span data-i18n="rev_last_update">最終更新: </span>2026/03/20 18:15</div>
+                            <div class="mt-2 text-right">
+                                <button class="btn btn-outline" style="padding: 4px 12px; font-size: 10px; border-radius: 6px; width:auto;" data-i18n="rev_content_manage">コンテンツ管理</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 2: 承認済 -->
+            <div id="edit-review" class="tab-content">
+                <p class="text-xs text-sub mb-4" data-i18n="rev_desc_approved">承認済みのコンテンツ一覧です。神認定されたものは特別に強調表示されます。</p>
+                
+                <!-- Archive List Item 3 (Newest) -->
+                <div class="archive-card-sm" id="edit-3">
+                    <div class="flex gap-3">
+                        <img src="images/aoi_thumbnails/aoi_live_rehe_sweat.png" class="ac-thumb-sm" onclick="openReviewDetail('edit-3', 'edit', 'Kuro', 'aoi_live_rehe_sweat', 'god')">
+                        <div style="flex:1;">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <div class="text-xs font-black">ライブリハーサル 編集1</div>
+                                    <div class="text-xs text-sub mt-1"><span data-i18n="rev_by">by</span> <b>Kuro</b> <span style="margin-left:6px; padding:2px 6px; background:rgba(0,0,0,0.05); border-radius:4px; font-size:10px;"><span data-i18n="type_video">🎥 動画</span> 1件 / 450MB</span></div>
+                                </div>
+                                <div class="flex flex-col items-end gap-1">
+                                    <div class="badge badge-god" style="font-size:10px; box-shadow: 0 0 8px rgba(255,107,0,0.4);" data-i18n="rev_badge_god">✨ 神認定</div>
+                                    <div class="text-[10px] text-sub text-right" style="font-size:10px; line-height:1.4; transform: scale(0.9); transform-origin: right;">
+                                        <span data-i18n="rev_time_register">登録: </span>2026/03/21 14:20<br><span data-i18n="rev_time_approve">承認: </span>2026/03/21 15:10
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Archive List Item 2 -->
+                <div class="archive-card-sm" id="edit-2">
+                    <div class="flex gap-3">
+                        <img src="images/aoi_thumbnails/aoi_summer_fest_yukata.png" class="ac-thumb-sm" onclick="openReviewDetail('edit-2', 'edit', 'みさき', 'aoi_summer_fest_yukata', 'approved')">
+                        <div style="flex:1;">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <div class="text-xs font-black">夏祭りオフショット 編集2</div>
+                                    <div class="text-xs text-sub mt-1"><span data-i18n="rev_by">by</span> <b>みさき</b> <span style="margin-left:6px; padding:2px 6px; background:rgba(0,0,0,0.05); border-radius:4px; font-size:10px;"><span data-i18n="type_image">📸 画像</span> 5件 / 21MB</span></div>
+                                </div>
+                                <div class="flex flex-col items-end gap-1">
+                                    <div class="badge badge-approved" style="font-size:10px; background: rgba(52, 199, 89, 0.1); color: #34C759;" data-i18n="rev_badge_approved">承認</div>
+                                    <div class="text-[10px] text-sub text-right" style="font-size:10px; line-height:1.4; transform: scale(0.9); transform-origin: right;">
+                                        <span data-i18n="rev_time_register">登録: </span>2026/03/21 13:05<br><span data-i18n="rev_time_approve">承認: </span>2026/03/21 14:00
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Archive List Item 1 (Oldest) -->
+                <div class="archive-card-sm" id="edit-1">
+                    <div class="flex gap-3">
+                        <img src="images/aoi_thumbnails/aoi_summer_fest_yukata.png" class="ac-thumb-sm" onclick="openReviewDetail('edit-1', 'edit', 'たかひろ', 'aoi_summer_fest_yukata', 'god')">
+                        <div style="flex:1;">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <div class="text-xs font-black">夏祭りオフショット 編集1</div>
+                                    <div class="text-xs text-sub mt-1"><span data-i18n="rev_by">by</span> <b>たかひろ</b> <span style="margin-left:6px; padding:2px 6px; background:rgba(0,0,0,0.05); border-radius:4px; font-size:10px;"><span data-i18n="type_video">🎥 動画</span> 2件 / 820MB</span></div>
+                                </div>
+                                <div class="flex flex-col items-end gap-1">
+                                    <div class="badge badge-god" style="font-size:10px; box-shadow: 0 0 8px rgba(255,107,0,0.4);" data-i18n="rev_badge_god">✨ 神認定</div>
+                                    <div class="text-[10px] text-sub text-right" style="font-size:10px; line-height:1.4; transform: scale(0.9); transform-origin: right;">
+                                        <span data-i18n="rev_time_register">登録: </span>2026/03/21 12:45<br><span data-i18n="rev_time_approve">承認: </span>2026/03/21 13:30
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 3: 未承認 -->
+            <div id="fan-original" class="tab-content">
+                <p class="text-xs text-sub mb-4" data-i18n="rev_desc_unapproved">ファンやクリエイターから投稿された新着コンテンツを審査します。</p>
+                
+                <div class="fan-grid">
+                    <!-- Fan Item 3 (Newest) -->
+                    <div class="archive-card-sm" id="fan-3">
+                        <div class="flex gap-3">
+                            <img src="images/aoi_thumbnails/aoi_live_miracle_action.png" class="ac-thumb-sm" onclick="openReviewDetail('fan-3', 'fan', 'Sho', 'aoi_live_miracle_action', 'unconfirmed')">
+                            <div style="flex:1;">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <div class="text-xs font-black">ライブ中の奇跡の一枚</div>
+                                        <div class="text-xs text-sub mt-1"><span data-i18n="rev_by">by</span> <b>Sho</b> <span style="margin-left:6px; padding:2px 6px; background:rgba(0,0,0,0.05); border-radius:4px; font-size:10px;"><span data-i18n="type_image">📸 画像</span> 1件 / 4.2MB</span></div>
+                                    </div>
+                                    <div class="text-[10px] text-sub text-right">2026/03/21 17:05</div>
+                                </div>
+                                
+                                <div class="flex gap-2 justify-end mt-3 border-t pt-3" style="border-color: rgba(0,0,0,0.05);">
+                                    <button class="btn" style="flex:1; padding: 6px; font-size: 11px; background: #E5E7EB; color: #4B5563; border-radius: 8px;" onclick="processApproval(this, 'fan-3', 'reject')" data-i18n="rev_btn_reject">却下</button>
+                                    <button class="btn" style="flex:1; padding: 6px; font-size: 11px; background: rgba(52, 199, 89, 0.1); color: #34C759; border-radius: 8px;" onclick="processApproval(this, 'fan-3', 'approve')" data-i18n="rev_btn_approve">承認</button>
+                                    <button class="btn" style="flex:1; padding: 6px; font-size: 11px; background: linear-gradient(135deg, #FF6B00, #FF9500); color: #FFF; border-radius: 8px; box-shadow: 0 4px 12px rgba(255,107,0,0.2);" onclick="processApproval(this, 'fan-3', 'god')" data-i18n="rev_badge_god">✨ 神認定</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Fan Item 2 -->
+                    <div class="archive-card-sm" id="fan-2">
+                        <div class="flex gap-3">
+                            <img src="images/aoi_thumbnails/aoi_cafe_latte_smile.png" class="ac-thumb-sm" onclick="openReviewDetail('fan-2', 'fan', 'Kenji', 'aoi_cafe_latte_smile', 'unconfirmed')">
+                            <div style="flex:1;">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <div class="text-xs font-black">カフェでの遭遇写真</div>
+                                        <div class="text-xs text-sub mt-1"><span data-i18n="rev_by">by</span> <b>Kenji</b> <span style="margin-left:6px; padding:2px 6px; background:rgba(0,0,0,0.05); border-radius:4px; font-size:10px;"><span data-i18n="type_image">📸 画像</span> 3件 / 14MB</span></div>
+                                    </div>
+                                    <div class="text-[10px] text-sub text-right">2026/03/21 16:12</div>
+                                </div>
+                                
+                                <div class="flex gap-2 justify-end mt-3 border-t pt-3" style="border-color: rgba(0,0,0,0.05);">
+                                    <button class="btn" style="flex:1; padding: 6px; font-size: 11px; background: #E5E7EB; color: #4B5563; border-radius: 8px;" onclick="processApproval(this, 'fan-2', 'reject')" data-i18n="rev_btn_reject">却下</button>
+                                    <button class="btn" style="flex:1; padding: 6px; font-size: 11px; background: rgba(52, 199, 89, 0.1); color: #34C759; border-radius: 8px;" onclick="processApproval(this, 'fan-2', 'approve')" data-i18n="rev_btn_approve">承認</button>
+                                    <button class="btn" style="flex:1; padding: 6px; font-size: 11px; background: linear-gradient(135deg, #FF6B00, #FF9500); color: #FFF; border-radius: 8px; box-shadow: 0 4px 12px rgba(255,107,0,0.2);" onclick="processApproval(this, 'fan-2', 'god')" data-i18n="rev_badge_god">✨ 神認定</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Fan Item 1 (Oldest) -->
+                    <div class="archive-card-sm" id="fan-1">
+                        <div class="flex gap-3">
+                            <img src="images/aoi_thumbnails/aoi_street_wave.png" class="ac-thumb-sm" onclick="openReviewDetail('fan-1', 'fan', 'あおいLOVE', 'aoi_street_wave', 'unconfirmed')">
+                            <div style="flex:1;">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <div class="text-xs font-black">出待ちのあおいちゃん</div>
+                                        <div class="text-xs text-sub mt-1"><span data-i18n="rev_by">by</span> <b>あおいLOVE</b> <span style="margin-left:6px; padding:2px 6px; background:rgba(0,0,0,0.05); border-radius:4px; font-size:10px;"><span data-i18n="type_video">🎥 動画</span> 1件 / 1.2GB</span></div>
+                                    </div>
+                                    <div class="text-[10px] text-sub text-right">2026/03/21 15:30</div>
+                                </div>
+                                
+                                <div class="flex gap-2 justify-end mt-3 border-t pt-3" style="border-color: rgba(0,0,0,0.05);">
+                                    <button class="btn" style="flex:1; padding: 6px; font-size: 11px; background: #E5E7EB; color: #4B5563; border-radius: 8px;" onclick="processApproval(this, 'fan-1', 'reject')" data-i18n="rev_btn_reject">却下</button>
+                                    <button class="btn" style="flex:1; padding: 6px; font-size: 11px; background: rgba(52, 199, 89, 0.1); color: #34C759; border-radius: 8px;" onclick="processApproval(this, 'fan-1', 'approve')" data-i18n="rev_btn_approve">承認</button>
+                                    <button class="btn" style="flex:1; padding: 6px; font-size: 11px; background: linear-gradient(135deg, #FF6B00, #FF9500); color: #FFF; border-radius: 8px; box-shadow: 0 4px 12px rgba(255,107,0,0.2);" onclick="processApproval(this, 'fan-1', 'god')" data-i18n="rev_badge_god">✨ 神認定</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Review Detail Modal -->
+        <div id="reviewModal" class="modal-overlay">
+            <div class="modal-container">
+                <div class="modal-img-wrap">
+                    <img src="" class="modal-img" alt="Review Content">
+                </div>
+                <div class="modal-content">
+                    <div class="flex justify-between items-center mb-6">
+                        <div>
+                            <div class="text-xs text-sub" data-i18n="rev_lbl_curator">キュレーター / 投稿者</div>
+                            <div class="modal-curator-name font-black">---</div>
+                        </div>
+                        <span class="modal-status-badge badge badge-unconfirmed" data-i18n="rev_badge_unconfirmed">未確認</span>
+                    </div>
+                    
+                    <div class="modal-actions flex gap-4">
+                        <!-- ボタンはJSで動的に生成 -->
+                    </div>
+                    <button class="btn btn-ghost mt-6 text-xs" onclick="closeModal()" data-i18n="rev_btn_close">閉じる</button>
+                </div>
+            </div>
+        </div>
+
+        <nav class="bottom-nav">
+            <a href="dashboard.html" class="nav-item">
+                <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+                <span data-i18n="nav_home">ホーム</span>
+            </a>
+            <a href="album_edit.html" class="nav-item">
+                <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                <span data-i18n="nav_post">MY投稿</span>
+            </a>
+            <a href="review.html" class="nav-item active">
+                <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                <span data-i18n="nav_review">レビュー</span>
+            </a>
+            <a href="invite.html" class="nav-item">
+                <svg viewBox="0 0 24 24"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                <span data-i18n="nav_invite">招待</span>
+            </a>
+            <a href="mypage.html" class="nav-item">
+                <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                <span data-i18n="nav_mypage">マイページ</span>
+            </a>
+        </nav>
+    </div>
+    <script>
+        function processApproval(btn, id, action) {
+            const card = btn.closest('.archive-card-sm');
+            
+            // Disable buttons
+            const buttons = card.querySelectorAll('button');
+            buttons.forEach(b => { b.disabled = true; b.style.opacity = '0.5'; });
+            
+            // Show loading
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<span class="loading-spinner" style="width:10px;height:10px;border-width:2px;border-top-color:currentColor;"></span>';
+            btn.style.opacity = '1';
+
+            setTimeout(() => {
+                if (action === 'reject') {
+                    // Turn the flex row of buttons into a "却下済み" indicator inside Unapproved.
+                    const btnContainer = btn.parentNode;
+                    btnContainer.innerHTML = `<div class="text-[11px] font-black w-full text-center" style="color: #FF3B30; padding: 8px; background: rgba(255, 59, 48, 0.1); border-radius: 8px;">${t('rev_msg_rejected')}</div>`;
+                    
+                    const imgNode = card.querySelector('img');
+                    imgNode.style.filter = 'grayscale(100%) opacity(60%)';
+                    card.style.background = '#FCFDFD';
+                    card.style.border = '1px dashed rgba(255,59,48,0.3)';
+                    card.style.opacity = '0.85';
+                    
+                    imgNode.setAttribute('onclick', imgNode.getAttribute('onclick').replace(/'unconfirmed'/g, `'rejected'`));
+                    return;
+                }
+
+                // Animate out
+                card.style.transition = 'all 0.3s cubic-bezier(0.1, 0.8, 0.2, 1)';
+                card.style.transform = 'scale(0.95) translateX(-20px)';
+                card.style.opacity = '0';
+                
+                setTimeout(() => {
+                    // Approved or God -> Move to 'edit-review'
+                    const imgNode = card.querySelector('img');
+                    const imgWrap = imgNode.outerHTML;
+                    // Fix badge in detail view passing
+                    const newStatusAttr = action === 'god' ? 'god' : 'approved';
+                    const newOnclick = imgNode.getAttribute('onclick').replace(/'unconfirmed'/g, `'${newStatusAttr}'`);
+                    
+                    const title = card.querySelector('.font-black').innerHTML;
+                    const authorBlock = card.querySelector('.font-black').nextElementSibling.innerHTML;
+                    
+                    const now = new Date();
+                    const m = (now.getMonth() + 1).toString().padStart(2, '0');
+                    const d = now.getDate().toString().padStart(2, '0');
+                    const h = now.getHours().toString().padStart(2, '0');
+                    const min = now.getMinutes().toString().padStart(2, '0');
+                    const timeStr = `2026/${m}/${d} ${h}:${min}`;
+                    
+                    const originalTime = card.querySelector('.items-start .text-sub').innerText.trim();
+                    
+                    let badgeHtml = '';
+                    if(action === 'god') {
+                        badgeHtml = `<div class="badge badge-god" style="font-size:10px; box-shadow: 0 0 8px rgba(255,107,0,0.4);">${t('rev_badge_god')}</div>`;
+                    } else {
+                        badgeHtml = `<div class="badge badge-approved" style="font-size:10px; background: rgba(52, 199, 89, 0.1); color: #34C759;">${t('rev_badge_approved')}</div>`;
+                    }
+
+                    const newItemHtml = `
+                        <div class="flex gap-3">
+                            ${imgWrap.replace(/onclick=".*?"/, `onclick="${newOnclick}"`)}
+                            <div style="flex:1;">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <div class="text-xs font-black">${title}</div>
+                                        <div class="text-xs text-sub mt-1">${authorBlock}</div>
+                                    </div>
+                                    <div class="flex flex-col items-end gap-1">
+                                        ${badgeHtml}
+                                        <div class="text-[10px] text-sub text-right" style="font-size:10px; line-height:1.4; transform: scale(0.9); transform-origin: right;">
+                                            ${t('rev_time_register')}${originalTime}<br>${t('rev_time_approve')}${timeStr}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    const newCard = document.createElement('div');
+                    newCard.className = 'archive-card-sm';
+                    newCard.id = id;
+                    newCard.innerHTML = newItemHtml;
+                    newCard.style.transform = 'scale(0.95) translateY(-10px)';
+                    newCard.style.opacity = '0';
+                    newCard.style.transition = 'all 0.3s cubic-bezier(0.1, 0.8, 0.2, 1)';
+                    
+                    card.remove(); // specific to Unapproved list cleanup
+                    
+                    const approvedContainer = document.getElementById('edit-review');
+                    const firstChild = approvedContainer.querySelector('.archive-card-sm');
+                    if (firstChild) {
+                        approvedContainer.insertBefore(newCard, firstChild);
+                    } else {
+                        approvedContainer.appendChild(newCard); // Wait, after <p> tag is better but OK.
+                    }
+                    
+                    // Animate in
+                    setTimeout(() => {
+                        newCard.style.transform = 'scale(1) translateY(0)';
+                        newCard.style.opacity = '1';
+                    }, 50);
+                }, 300);
+            }, 800);
+        }
+    </script>
+    <script src="app.js"></script>
+</body>
+</html>
